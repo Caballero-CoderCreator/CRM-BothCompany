@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clientes — CRM Both Company</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/dashboard.html" class="nav-brand">Both Company</a>
+    <a href="/clientes.html" class="active">Clientes</a>
+    <a href="/cotizaciones.html">Cotizaciones</a>
+    <div class="nav-spacer"></div>
+    <span class="nav-user" id="nav-user-email"></span>
+    <button class="btn-logout" onclick="logout()">Salir</button>
+  </nav>
+
+  <div class="page">
+    <div class="page-header">
+      <h1 class="page-title">Clientes</h1>
+      <button class="btn btn-primary" onclick="abrirModalNuevo()">+ Nuevo cliente</button>
+    </div>
+
+    <div class="table-container">
+      <div class="table-toolbar">
+        <input type="text" class="search-input" placeholder="Buscar por nombre, empresa o teléfono..."
+          oninput="buscarClientes(this.value)">
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Empresa</th>
+            <th>Teléfono</th>
+            <th>Origen</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-clientes">
+          <tr><td colspan="5" class="loading">Cargando clientes...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-cliente" onclick="if(event.target===this)cerrarModal()">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="modal-titulo">Nuevo cliente</span>
+        <button class="btn-close" onclick="cerrarModal()">✕</button>
+      </div>
+      <input type="hidden" id="cliente-id">
+      <div class="form-group">
+        <label>Nombre *</label>
+        <input type="text" id="campo-nombre" placeholder="Nombre del cliente">
+      </div>
+      <div class="form-group">
+        <label>Empresa</label>
+        <input type="text" id="campo-empresa" placeholder="Nombre de la empresa">
+      </div>
+      <div class="form-group">
+        <label>Teléfono</label>
+        <input type="text" id="campo-telefono" placeholder="+503 0000 0000">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="campo-email" placeholder="correo@empresa.com">
+      </div>
+      <div class="form-group">
+        <label>Origen</label>
+        <select id="campo-fuente">
+          <option value="manual">✏️ Manual</option>
+          <option value="web">🌐 Web</option>
+          <option value="whatsapp">📱 WhatsApp</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Notas</label>
+        <textarea id="campo-notas" placeholder="Información adicional..."></textarea>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarCliente()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    const BADGES_FUENTE = {
+      web: '<span class="badge badge-web">🌐 Web</span>',
+      whatsapp: '<span class="badge badge-whatsapp">📱 WhatsApp</span>',
+      manual: '<span class="badge badge-manual">✏️ Manual</span>'
+    }
+  </script>
+  <script src="js/clientes.js"></script>
+  <script>
+    async function init() {
+      const session = await requireAuth()
+      if (!session) return
+      await mostrarUsuario()
+      await cargarClientes()
+    }
+    init()
+  </script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRM Both Company</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+  <div class="login-wrapper">
+    <div class="login-card">
+      <div class="login-logo">Both Company</div>
+      <div class="login-sub">Panel de gestión</div>
+      <div class="form-group">
+        <label>Correo electrónico</label>
+        <input type="email" id="email" placeholder="tu@email.com">
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="password" placeholder="••••••••">
+      </div>
+      <button class="btn btn-primary btn-login" onclick="handleLogin()">Entrar</button>
+      <div class="error-msg" id="error-msg"></div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    db.auth.getSession().then(({ data: { session } }) => {
+      if (session) window.location.href = '/dashboard.html'
+    })
+
+    async function handleLogin() {
+      const email = document.getElementById('email').value
+      const password = document.getElementById('password').value
+      const errorEl = document.getElementById('error-msg')
+      errorEl.classList.remove('visible')
+      try {
+        await loginConEmail(email, password)
+      } catch (e) {
+        errorEl.textContent = 'Correo o contraseña incorrectos'
+        errorEl.classList.add('visible')
+      }
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleLogin()
+    })
+  </script>
+</body>
+</html>

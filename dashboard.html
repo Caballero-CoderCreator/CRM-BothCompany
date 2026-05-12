@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — CRM Both Company</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/dashboard.html" class="nav-brand">Both Company</a>
+    <a href="/clientes.html">Clientes</a>
+    <a href="/cotizaciones.html">Cotizaciones</a>
+    <div class="nav-spacer"></div>
+    <span class="nav-user" id="nav-user-email"></span>
+    <button class="btn-logout" onclick="logout()">Salir</button>
+  </nav>
+
+  <div class="page">
+    <div class="page-header">
+      <h1 class="page-title">Dashboard</h1>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total clientes</div>
+        <div class="stat-value" id="stat-clientes">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Cotizaciones activas</div>
+        <div class="stat-value" id="stat-cotizaciones">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">En producción</div>
+        <div class="stat-value" id="stat-produccion">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Nuevos este mes</div>
+        <div class="stat-value" id="stat-nuevos">—</div>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <div class="table-toolbar">
+        <strong style="font-size:15px">Últimos clientes</strong>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Empresa</th>
+            <th>Origen</th>
+            <th>Registrado</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-ultimos-clientes">
+          <tr><td colspan="4" class="loading">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    const BADGES_FUENTE = {
+      web: '<span class="badge badge-web">🌐 Web</span>',
+      whatsapp: '<span class="badge badge-whatsapp">📱 WhatsApp</span>',
+      manual: '<span class="badge badge-manual">✏️ Manual</span>'
+    }
+
+    function formatFecha(iso) {
+      return new Date(iso).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })
+    }
+
+    async function cargarDashboard() {
+      const session = await requireAuth()
+      if (!session) return
+      await mostrarUsuario()
+
+      const [
+        { count: totalClientes },
+        { count: cotizacionesActivas },
+        { count: enProduccion },
+        { data: ultimosClientes }
+      ] = await Promise.all([
+        db.from('clientes').select('*', { count: 'exact', head: true }),
+        db.from('cotizaciones').select('*', { count: 'exact', head: true }).in('estado', ['enviada', 'aprobada']),
+        db.from('cotizaciones').select('*', { count: 'exact', head: true }).eq('estado', 'en_produccion'),
+        db.from('clientes').select('nombre, empresa, fuente, created_at').order('created_at', { ascending: false }).limit(5)
+      ])
+
+      const inicioMes = new Date()
+      inicioMes.setDate(1)
+      inicioMes.setHours(0, 0, 0, 0)
+      const { count: nuevosEsteMes } = await db.from('clientes')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', inicioMes.toISOString())
+
+      document.getElementById('stat-clientes').textContent = totalClientes ?? 0
+      document.getElementById('stat-cotizaciones').textContent = cotizacionesActivas ?? 0
+      document.getElementById('stat-produccion').textContent = enProduccion ?? 0
+      document.getElementById('stat-nuevos').textContent = nuevosEsteMes ?? 0
+
+      const tbody = document.getElementById('tabla-ultimos-clientes')
+      if (!ultimosClientes?.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty-state"><p>Aún no hay clientes</p></td></tr>'
+        return
+      }
+      tbody.innerHTML = ultimosClientes.map(c => `
+        <tr>
+          <td>${c.nombre}</td>
+          <td>${c.empresa || '—'}</td>
+          <td>${BADGES_FUENTE[c.fuente] || c.fuente}</td>
+          <td>${formatFecha(c.created_at)}</td>
+        </tr>
+      `).join('')
+    }
+
+    cargarDashboard()
+  </script>
+</body>
+</html>

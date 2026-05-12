@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nueva cotización — CRM Both Company</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/dashboard.html" class="nav-brand">Both Company</a>
+    <a href="/clientes.html">Clientes</a>
+    <a href="/cotizaciones.html" class="active">Cotizaciones</a>
+    <div class="nav-spacer"></div>
+    <span class="nav-user" id="nav-user-email"></span>
+    <button class="btn-logout" onclick="logout()">Salir</button>
+  </nav>
+
+  <div class="page">
+    <div class="page-header">
+      <h1 class="page-title">Nueva cotización</h1>
+      <a href="/cotizaciones.html" class="btn btn-secondary">← Volver</a>
+    </div>
+
+    <div class="form-card" style="max-width:800px">
+      <div class="form-group">
+        <label>Cliente *</label>
+        <select id="campo-cliente">
+          <option value="">Seleccionar cliente...</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group">
+          <label>Número de cotización *</label>
+          <input type="text" id="campo-numero" placeholder="Ej: #045">
+        </div>
+        <div class="form-group">
+          <label>Estado inicial</label>
+          <select id="campo-estado">
+            <option value="borrador">Borrador</option>
+            <option value="enviada">Enviada</option>
+          </select>
+        </div>
+      </div>
+
+      <label style="display:block;font-size:13px;font-weight:600;color:#4a5568;margin-bottom:10px">
+        Items de la cotización
+      </label>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th style="width:45%">Descripción</th>
+            <th style="width:15%">Cantidad</th>
+            <th style="width:20%">Precio unitario</th>
+            <th style="width:15%">Total</th>
+            <th style="width:5%"></th>
+          </tr>
+        </thead>
+        <tbody id="items-body"></tbody>
+      </table>
+      <button class="btn btn-secondary btn-sm" onclick="agregarItem()" style="margin-bottom:16px">
+        + Agregar item
+      </button>
+
+      <div class="total-row">
+        <span>Total:</span>
+        <span class="total-amount" id="total-display">$0.00</span>
+      </div>
+
+      <div class="form-group">
+        <label>Notas</label>
+        <textarea id="campo-notas" placeholder="Observaciones, condiciones, tiempo de entrega..."></textarea>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+        <a href="/cotizaciones.html" class="btn btn-secondary">Cancelar</a>
+        <button class="btn btn-primary" onclick="guardarCotizacion()">Guardar cotización</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    let items = []
+
+    function agregarItem() {
+      const id = Date.now()
+      items.push({ id, descripcion: '', cantidad: 1, precio_unitario: 0, precio_total: 0 })
+      renderizarItems()
+    }
+
+    function eliminarItem(id) {
+      items = items.filter(i => i.id !== id)
+      renderizarItems()
+      actualizarTotal()
+    }
+
+    function actualizarItem(id, campo, valor) {
+      const item = items.find(i => i.id === id)
+      if (!item) return
+      item[campo] = campo === 'descripcion' ? valor : Number(valor) || 0
+      if (campo === 'cantidad' || campo === 'precio_unitario') {
+        item.precio_total = item.cantidad * item.precio_unitario
+      }
+      actualizarTotal()
+    }
+
+    function actualizarTotal() {
+      const total = items.reduce((s, i) => s + i.precio_total, 0)
+      document.getElementById('total-display').textContent = '$' + total.toFixed(2)
+      items.forEach(item => {
+        const el = document.getElementById('total-item-' + item.id)
+        if (el) el.textContent = '$' + item.precio_total.toFixed(2)
+      })
+    }
+
+    function renderizarItems() {
+      const tbody = document.getElementById('items-body')
+      tbody.innerHTML = items.map(item => `
+        <tr>
+          <td><input type="text" value="${item.descripcion}"
+            oninput="actualizarItem(${item.id}, 'descripcion', this.value)"
+            placeholder="Descripción del bordado..."></td>
+          <td><input type="number" value="${item.cantidad}" min="1"
+            oninput="actualizarItem(${item.id}, 'cantidad', this.value)"></td>
+          <td><input type="number" value="${item.precio_unitario}" min="0" step="0.01"
+            oninput="actualizarItem(${item.id}, 'precio_unitario', this.value)"></td>
+          <td id="total-item-${item.id}">$${item.precio_total.toFixed(2)}</td>
+          <td><button class="btn btn-danger btn-sm" onclick="eliminarItem(${item.id})">✕</button></td>
+        </tr>
+      `).join('')
+    }
+
+    async function guardarCotizacion() {
+      const clienteId = document.getElementById('campo-cliente').value
+      const numero = document.getElementById('campo-numero').value.trim()
+      const estado = document.getElementById('campo-estado').value
+      const notas = document.getElementById('campo-notas').value.trim()
+
+      if (!clienteId) { alert('Selecciona un cliente'); return }
+      if (!numero) { alert('Ingresa el número de cotización'); return }
+      if (!items.length) { alert('Agrega al menos un item'); return }
+
+      const total = items.reduce((s, i) => s + i.precio_total, 0)
+
+      const { data: cotizacion, error: errCot } = await db
+        .from('cotizaciones')
+        .insert({ cliente_id: clienteId, numero, estado, total, notas })
+        .select()
+        .single()
+
+      if (errCot) { alert('Error al crear cotización: ' + errCot.message); return }
+
+      const itemsParaGuardar = items.map(i => ({
+        cotizacion_id: cotizacion.id,
+        descripcion: i.descripcion,
+        cantidad: i.cantidad,
+        precio_unitario: i.precio_unitario,
+        precio_total: i.precio_total
+      }))
+
+      const { error: errItems } = await db.from('cotizacion_items').insert(itemsParaGuardar)
+      if (errItems) { alert('Error al guardar items: ' + errItems.message); return }
+
+      window.location.href = '/cotizaciones.html'
+    }
+
+    async function init() {
+      const session = await requireAuth()
+      if (!session) return
+      await mostrarUsuario()
+
+      const { data: clientes } = await db
+        .from('clientes')
+        .select('id, nombre, empresa')
+        .order('nombre')
+
+      const select = document.getElementById('campo-cliente')
+      clientes?.forEach(c => {
+        const opt = document.createElement('option')
+        opt.value = c.id
+        opt.textContent = c.nombre + (c.empresa ? ` — ${c.empresa}` : '')
+        select.appendChild(opt)
+      })
+
+      agregarItem()
+    }
+
+    init()
+  </script>
+</body>
+</html>

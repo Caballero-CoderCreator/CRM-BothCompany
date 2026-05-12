@@ -1,0 +1,131 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f5f7fa;
+  color: #2d3748;
+}
+
+/* ── NAV ── */
+.nav {
+  background: #1a202c;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  height: 56px;
+}
+.nav-brand { color: #fff; font-weight: 700; font-size: 16px; text-decoration: none; }
+.nav a { color: #a0aec0; text-decoration: none; font-size: 14px; }
+.nav a:hover, .nav a.active { color: #fff; }
+.nav-spacer { flex: 1; }
+.nav-user { color: #a0aec0; font-size: 13px; }
+.btn-logout { background: none; border: 1px solid #4a5568; color: #a0aec0;
+  padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+.btn-logout:hover { border-color: #e53e3e; color: #e53e3e; }
+
+/* ── LAYOUT ── */
+.page { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.page-title { font-size: 24px; font-weight: 700; }
+
+/* ── CARDS DE STATS ── */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+.stat-card { background: #fff; border-radius: 12px; padding: 20px 24px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.stat-label { font-size: 13px; color: #718096; margin-bottom: 8px; }
+.stat-value { font-size: 32px; font-weight: 700; color: #2d3748; }
+
+/* ── TABLA ── */
+.table-container { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); overflow: hidden; }
+.table-toolbar { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid #e2e8f0; }
+table { width: 100%; border-collapse: collapse; }
+th { background: #f7fafc; text-align: left; padding: 12px 16px; font-size: 12px;
+  font-weight: 600; color: #718096; text-transform: uppercase; letter-spacing: .05em; }
+td { padding: 14px 16px; border-top: 1px solid #e2e8f0; font-size: 14px; }
+tr:hover td { background: #f7fafc; }
+
+/* ── BADGES ── */
+.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+.badge-web { background: #ebf8ff; color: #2b6cb0; }
+.badge-whatsapp { background: #f0fff4; color: #276749; }
+.badge-manual { background: #f7fafc; color: #718096; }
+.badge-borrador { background: #f7fafc; color: #718096; }
+.badge-enviada { background: #ebf8ff; color: #2b6cb0; }
+.badge-aprobada { background: #f0fff4; color: #276749; }
+.badge-en_produccion { background: #fefcbf; color: #744210; }
+.badge-entregada { background: #e9d8fd; color: #553c9a; }
+
+/* ── BOTONES ── */
+.btn { display: inline-block; padding: 8px 16px; border-radius: 8px; font-size: 14px;
+  font-weight: 500; cursor: pointer; border: none; text-decoration: none; }
+.btn-primary { background: #3182ce; color: #fff; }
+.btn-primary:hover { background: #2b6cb0; }
+.btn-secondary { background: #edf2f7; color: #4a5568; }
+.btn-secondary:hover { background: #e2e8f0; }
+.btn-danger { background: #fed7d7; color: #c53030; }
+.btn-danger:hover { background: #feb2b2; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+
+/* ── FORMULARIOS ── */
+.form-card { background: #fff; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,.08); max-width: 600px; }
+.form-group { margin-bottom: 20px; }
+label { display: block; font-size: 13px; font-weight: 600; color: #4a5568; margin-bottom: 6px; }
+input, select, textarea {
+  width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px;
+  font-size: 14px; color: #2d3748; background: #fff; transition: border-color .15s;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: #3182ce; }
+textarea { resize: vertical; min-height: 80px; }
+
+/* ── BÚSQUEDA ── */
+.search-input { padding: 8px 14px; border: 1px solid #e2e8f0; border-radius: 8px;
+  font-size: 14px; width: 280px; }
+.search-input:focus { outline: none; border-color: #3182ce; }
+
+/* ── FILTROS ── */
+.filtros { display: flex; gap: 8px; flex-wrap: wrap; }
+.filtro-btn { padding: 5px 14px; border-radius: 20px; border: 1px solid #e2e8f0;
+  background: #fff; font-size: 13px; cursor: pointer; color: #718096; }
+.filtro-btn.active { background: #3182ce; color: #fff; border-color: #3182ce; }
+
+/* ── LOGIN ── */
+.login-wrapper { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+.login-card { background: #fff; border-radius: 16px; padding: 40px; width: 100%;
+  max-width: 380px; box-shadow: 0 4px 24px rgba(0,0,0,.08); }
+.login-logo { font-size: 28px; font-weight: 800; color: #1a202c; margin-bottom: 8px; }
+.login-sub { color: #718096; font-size: 14px; margin-bottom: 32px; }
+.login-card .form-group { margin-bottom: 16px; }
+.btn-login { width: 100%; padding: 12px; font-size: 15px; }
+.error-msg { color: #c53030; font-size: 13px; margin-top: 12px; display: none; }
+.error-msg.visible { display: block; }
+
+/* ── MODAL ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5);
+  display: none; align-items: center; justify-content: center; z-index: 100; }
+.modal-overlay.visible { display: flex; }
+.modal { background: #fff; border-radius: 16px; padding: 32px; width: 100%;
+  max-width: 520px; box-shadow: 0 8px 32px rgba(0,0,0,.12); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.modal-title { font-size: 18px; font-weight: 700; }
+.btn-close { background: none; border: none; font-size: 20px; cursor: pointer; color: #718096; }
+
+/* ── ITEMS COTIZACIÓN ── */
+.items-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+.items-table th { background: #f7fafc; padding: 8px 12px; font-size: 12px;
+  color: #718096; text-align: left; font-weight: 600; }
+.items-table td { padding: 8px 12px; border-top: 1px solid #e2e8f0; }
+.items-table input { padding: 6px 8px; font-size: 13px; }
+.total-row { display: flex; justify-content: flex-end; align-items: center; gap: 16px;
+  padding: 12px 0; font-size: 15px; }
+.total-amount { font-size: 22px; font-weight: 700; color: #2d3748; }
+
+/* ── ESTADOS VACÍOS ── */
+.empty-state { text-align: center; padding: 60px 20px; color: #a0aec0; }
+.empty-state p { font-size: 15px; }
+
+/* ── LOADING ── */
+.loading { text-align: center; padding: 40px; color: #a0aec0; font-size: 14px; }
