@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catálogo — CRM Both Company</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <style>
+    /* ── LEYENDA ── */
+    .leyenda {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      background: #fff; border-radius: 10px; border: 1px solid #e5e7eb;
+      padding: 14px 18px; margin-bottom: 28px;
+    }
+    .ley-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #374151; }
+    .ley-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+    /* ── SECCIÓN ── */
+    .cat-seccion {
+      background: #fff; border-radius: 14px; border: 1px solid #e5e7eb;
+      margin-bottom: 24px; overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
+    .cat-sec-head {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 18px 20px; border-bottom: 1px solid #f3f4f6; gap: 12px;
+      background: #fafafa;
+    }
+    .cat-sec-info { display: flex; align-items: center; gap: 14px; }
+    .cat-sec-icon { font-size: 28px; flex-shrink: 0; }
+    .cat-sec-nombre { font-size: 17px; font-weight: 800; color: #1a202c; }
+    .cat-sec-desc { font-size: 13px; color: #718096; margin-top: 2px; }
+    .cat-sec-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .cat-sec-footer {
+      padding: 14px 20px; border-top: 1px solid #f3f4f6;
+      background: #fafafa;
+    }
+    .btn-add-prod {
+      background: none; border: 1.5px dashed #cbd5e0; color: #718096;
+      padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all .2s; width: 100%; text-align: center;
+    }
+    .btn-add-prod:hover {
+      border-color: #1a202c; color: #1a202c; background: #f9fafb;
+    }
+
+    /* ── GRID DE PRODUCTOS ── */
+    .cat-productos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px; padding: 16px 20px;
+    }
+    .cat-empty-sec {
+      grid-column: 1/-1; text-align: center; color: #9ca3af;
+      font-size: 13px; padding: 20px;
+    }
+
+    /* ── TARJETA DE PRODUCTO ── */
+    .cat-prod-card {
+      border-radius: 10px; border: 1.5px solid #e5e7eb;
+      padding: 14px 14px 10px; position: relative;
+      transition: box-shadow .15s;
+    }
+    .cat-prod-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,.09); }
+    .cat-prod-card:hover .cat-prod-actions { opacity: 1; }
+
+    .cat-prod-tipo {
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 3px; border-radius: 10px 10px 0 0;
+    }
+    .cat-prod-body { padding-top: 4px; }
+    .cat-prod-nombre {
+      font-size: 13px; font-weight: 700; color: #1a202c;
+      line-height: 1.3; margin-bottom: 6px;
+    }
+    .cat-prod-precio {
+      font-size: 20px; font-weight: 900; color: #e94560;
+      margin-bottom: 4px;
+    }
+    .cat-prod-notas { font-size: 11px; color: #9ca3af; line-height: 1.4; }
+
+    .cat-prod-actions {
+      display: flex; gap: 6px; margin-top: 10px;
+      opacity: 0; transition: opacity .15s;
+    }
+    .btn-prod-edit, .btn-prod-del {
+      flex: 1; padding: 5px; border-radius: 6px; font-size: 13px;
+      cursor: pointer; border: none; transition: background .15s;
+    }
+    .btn-prod-edit { background: #f0f4ff; color: #3730a3; }
+    .btn-prod-edit:hover { background: #e0e7ff; }
+    .btn-prod-del { background: #fff0f0; color: #dc2626; }
+    .btn-prod-del:hover { background: #fee2e2; }
+
+    /* ── EMPTY STATE ── */
+    .empty-cat {
+      text-align: center; padding: 60px 20px; color: #9ca3af;
+    }
+    .empty-cat p { font-size: 16px; margin-bottom: 16px; }
+
+    /* ── TIPO PREVIEW ── */
+    #tipo-preview {
+      padding: 8px 12px; border-radius: 8px; border: 1.5px solid #e5e7eb;
+      font-size: 12px; font-weight: 600; color: #374151;
+      margin-top: 8px; min-height: 36px; display: flex; align-items: center;
+      transition: all .2s;
+    }
+
+    /* ── MODAL ICONO PICKER ── */
+    .icon-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .icon-opt {
+      width: 38px; height: 38px; border-radius: 8px; border: 1.5px solid #e5e7eb;
+      font-size: 20px; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; transition: all .15s;
+    }
+    .icon-opt:hover, .icon-opt.selected { border-color: #1a202c; background: #f0f4ff; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/dashboard.html" class="nav-brand">Both Company</a>
+    <a href="/clientes.html">Clientes</a>
+    <a href="/cotizaciones.html">Cotizaciones</a>
+    <a href="/pedidos.html">Pedidos</a>
+    <a href="/catalogo.html" class="active">Catálogo</a>
+    <div class="nav-spacer"></div>
+    <span class="nav-user" id="nav-user-email"></span>
+    <button class="btn-logout" onclick="logout()">Salir</button>
+  </nav>
+
+  <div class="page">
+    <div class="page-header">
+      <h1 class="page-title">Catálogo de Productos</h1>
+      <button class="btn btn-primary" onclick="abrirModalSeccion()">+ Nueva sección</button>
+    </div>
+
+    <!-- Leyenda de colores -->
+    <div class="leyenda">
+      <div class="ley-item"><div class="ley-dot" style="background:#9ca3af;"></div> Base</div>
+      <div class="ley-item"><div class="ley-dot" style="background:#3b82f6;"></div> + 1 Bordado</div>
+      <div class="ley-item"><div class="ley-dot" style="background:#0284c7;"></div> + 2 Bordados</div>
+      <div class="ley-item"><div class="ley-dot" style="background:#8b5cf6;"></div> + 3 Bordados</div>
+      <div class="ley-item"><div class="ley-dot" style="background:#f59e0b;"></div> Especial / Talla</div>
+      <div class="ley-item"><div class="ley-dot" style="background:#ca8a04;"></div> Con Reflectivo</div>
+      <div class="ley-item"><div class="ley-dot" style="background:#e5e7eb;border:1px solid #d1d5db;"></div> Sin clasificar</div>
+    </div>
+
+    <!-- Contenido dinámico -->
+    <div id="catalogo-container">
+      <div style="text-align:center;padding:60px;color:#9ca3af;">Cargando catálogo...</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!--           MODAL SECCIÓN                 -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="modal-overlay" id="modal-seccion" onclick="if(event.target===this)cerrarModalSeccion()">
+    <div class="modal" style="max-width:480px;">
+      <div class="modal-header">
+        <span class="modal-title" id="modal-sec-titulo">Nueva sección</span>
+        <button class="btn-close" onclick="cerrarModalSeccion()">✕</button>
+      </div>
+      <input type="hidden" id="modal-sec-id">
+
+      <div class="form-group">
+        <label>Nombre de la sección *</label>
+        <input type="text" id="modal-sec-nombre" placeholder="Ej: Camisas Tipo Polo"
+          onkeydown="if(event.key==='Enter')guardarSeccion()">
+      </div>
+      <div class="form-group">
+        <label>Descripción</label>
+        <input type="text" id="modal-sec-desc" placeholder="Ej: Tela piqué y Dryfit · Todos los colores">
+      </div>
+      <div class="form-group">
+        <label>Ícono</label>
+        <input type="text" id="modal-sec-icono" placeholder="📦" maxlength="4"
+          style="font-size:22px;width:70px;text-align:center;">
+        <div class="icon-picker">
+          ${['👔','🔵','🟦','👕','🧥','🍳','👖','🧢','🪡','🖨️','☕','👗','🦺','🩺','🛠️','📦','🎽','🩳','👒','🎀'].map(e =>
+            `<div class="icon-opt" onclick="seleccionarIcono('${e}')">${e}</div>`
+          ).join('')}
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+        <button class="btn btn-secondary" onclick="cerrarModalSeccion()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-guardar-sec" onclick="guardarSeccion()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!--           MODAL PRODUCTO                -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="modal-overlay" id="modal-producto" onclick="if(event.target===this)cerrarModalProducto()">
+    <div class="modal" style="max-width:500px;">
+      <div class="modal-header">
+        <span class="modal-title" id="modal-prod-titulo">Nuevo producto</span>
+        <button class="btn-close" onclick="cerrarModalProducto()">✕</button>
+      </div>
+      <input type="hidden" id="modal-prod-id">
+      <input type="hidden" id="modal-prod-seccion">
+
+      <div class="form-group">
+        <label>Nombre del producto *</label>
+        <input type="text" id="modal-prod-nombre"
+          placeholder="Ej: Polo Piqué + 1 bordado">
+      </div>
+      <div class="form-group">
+        <label>Precio</label>
+        <input type="text" id="modal-prod-precio"
+          placeholder='Ej: $17 – $21  ó  desde $14  ó  $25.00'>
+        <small style="color:#9ca3af;font-size:11px;">Escribe el precio como quieras mostrarlo al cliente.</small>
+      </div>
+      <div class="form-group">
+        <label>Notas (opcional)</label>
+        <input type="text" id="modal-prod-notas"
+          placeholder="Ej: Pedido de 50 u. confirmado">
+      </div>
+      <div class="form-group">
+        <label>Tipo (define el color de la tarjeta)</label>
+        <select id="modal-prod-tipo" onchange="actualizarVistaTipo()">
+          <option value="base">● Base (sin personalización)</option>
+          <option value="bordado1">+ 1 Bordado / Estampado</option>
+          <option value="bordado2">++ 2 Bordados / Estampados</option>
+          <option value="bordado3">+++ 3 Bordados / Estampados</option>
+          <option value="especial">✦ Talla especial / Premium</option>
+          <option value="reflectivo">⚡ Con reflectivo</option>
+          <option value="custom">— Sin clasificar</option>
+        </select>
+        <div id="tipo-preview"></div>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+        <button class="btn btn-secondary" onclick="cerrarModalProducto()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-guardar-prod" onclick="guardarProducto()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/catalogo.js"></script>
+  <script>
+    function seleccionarIcono(emoji) {
+      document.getElementById('modal-sec-icono').value = emoji
+      document.querySelectorAll('.icon-opt').forEach(el => {
+        el.classList.toggle('selected', el.textContent === emoji)
+      })
+    }
+
+    async function init() {
+      const session = await requireAuth()
+      if (!session) return
+      await mostrarUsuario()
+      await cargarCatalogo()
+    }
+    init()
+  </script>
+</body>
+</html>
