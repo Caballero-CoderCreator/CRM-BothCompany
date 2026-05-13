@@ -8,16 +8,38 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
 <body>
-  <nav class="nav">
-    <a href="/dashboard.html" class="nav-brand">Both Company</a>
-    <a href="/clientes.html">Clientes</a>
-    <a href="/cotizaciones.html">Cotizaciones</a>
-    <a href="/pedidos.html" class="active">Pedidos</a>
-    <a href="/catalogo.html">Catálogo</a>
-    <div class="nav-spacer"></div>
-    <span class="nav-user" id="nav-user-email"></span>
-    <button class="btn-logout" onclick="logout()">Salir</button>
-  </nav>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-logo">Both Company</div>
+        <div class="sidebar-role">CRM Executive</div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/dashboard.html" class="nav-item"><span class="nav-icon">⊞</span> Dashboard</a>
+        <a href="/clientes.html" class="nav-item"><span class="nav-icon">👤</span> Clientes</a>
+        <a href="/cotizaciones.html" class="nav-item"><span class="nav-icon">📋</span> Cotizaciones</a>
+        <a href="/pedidos.html" class="nav-item active"><span class="nav-icon">📦</span> Pedidos</a>
+        <a href="/catalogo.html" class="nav-item"><span class="nav-icon">🗂️</span> Catálogo</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <a href="/cotizacion-nueva.html" class="btn btn-primary sidebar-cta">+ Nueva cotización</a>
+        <a href="#" class="nav-item-small"><span class="nav-icon">❓</span> Ayuda</a>
+        <a href="#" class="nav-item-small"><span class="nav-icon">⚙</span> Configuración</a>
+      </div>
+    </aside>
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-tabs">
+          <a href="/dashboard.html" class="tab-link">Dashboard</a>
+          <a href="/clientes.html" class="tab-link">Clientes</a>
+          <a href="/cotizaciones.html" class="tab-link">Cotizaciones</a>
+          <a href="/pedidos.html" class="tab-link active">Pedidos</a>
+        </div>
+        <div class="topbar-right">
+          <span class="nav-user" id="nav-user-email"></span>
+          <button class="btn-logout" onclick="logout()">Salir</button>
+        </div>
+      </header>
 
   <div class="page">
     <div class="page-header">
@@ -49,6 +71,8 @@
           <tr><td colspan="5" class="loading">Cargando pedidos...</td></tr>
         </tbody>
       </table>
+    </div>
+  </div>
     </div>
   </div>
 
