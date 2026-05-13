@@ -14,14 +14,18 @@ async function cargarClientes() {
 function renderizarClientes(lista) {
   const tbody = document.getElementById('tabla-clientes')
   if (!lista.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><p>No hay clientes aún. Crea el primero.</p></td></tr>'
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><p>No hay clientes aún. Crea el primero.</p></td></tr>'
     return
   }
   tbody.innerHTML = lista.map(c => `
     <tr>
-      <td><strong>${c.nombre}</strong></td>
+      <td>
+        <strong>${c.nombre}</strong>
+        ${c.notas ? `<div style="font-size:12px;color:#718096;margin-top:2px;">${c.notas}</div>` : ''}
+      </td>
       <td>${c.empresa || '—'}</td>
       <td>${c.telefono || '—'}</td>
+      <td>${c.email ? `<a href="mailto:${c.email}" style="color:#3b82f6;font-size:13px;">${c.email}</a>` : '—'}</td>
       <td>${BADGES_FUENTE[c.fuente] || c.fuente}</td>
       <td>
         <button class="btn btn-secondary btn-sm" onclick="abrirModalEditar('${c.id}')">Editar</button>
@@ -36,7 +40,8 @@ function buscarClientes(termino) {
   const filtrados = todosLosClientes.filter(c =>
     c.nombre.toLowerCase().includes(t) ||
     (c.empresa || '').toLowerCase().includes(t) ||
-    (c.telefono || '').includes(t)
+    (c.telefono || '').includes(t) ||
+    (c.email || '').toLowerCase().includes(t)
   )
   renderizarClientes(filtrados)
 }
