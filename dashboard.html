@@ -12,53 +12,88 @@
     <a href="/dashboard.html" class="nav-brand">Both Company</a>
     <a href="/clientes.html">Clientes</a>
     <a href="/cotizaciones.html">Cotizaciones</a>
+    <a href="/pedidos.html">Pedidos</a>
     <div class="nav-spacer"></div>
     <span class="nav-user" id="nav-user-email"></span>
     <button class="btn-logout" onclick="logout()">Salir</button>
   </nav>
 
   <div class="page">
-    <div class="page-header">
-      <h1 class="page-title">Dashboard</h1>
+
+    <div class="welcome-bar">
+      <div>
+        <h1 class="page-title">Dashboard</h1>
+        <p class="welcome-date" id="welcome-date"></p>
+      </div>
+      <div class="actions-bar">
+        <a href="/clientes.html" class="btn btn-secondary">+ Nuevo cliente</a>
+        <a href="/cotizacion-nueva.html" class="btn btn-primary">+ Nueva cotización</a>
+      </div>
     </div>
 
     <div class="stats-grid">
-      <div class="stat-card">
+      <div class="stat-card c-blue">
+        <span class="stat-icon">👥</span>
         <div class="stat-label">Total clientes</div>
         <div class="stat-value" id="stat-clientes">—</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">Cotizaciones activas</div>
+      <div class="stat-card c-amber">
+        <span class="stat-icon">📋</span>
+        <div class="stat-label">Cotizaciones pendientes</div>
         <div class="stat-value" id="stat-cotizaciones">—</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">En producción</div>
+      <div class="stat-card c-green">
+        <span class="stat-icon">🏭</span>
+        <div class="stat-label">Pedidos en producción</div>
         <div class="stat-value" id="stat-produccion">—</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card c-purple">
+        <span class="stat-icon">⭐</span>
         <div class="stat-label">Nuevos este mes</div>
         <div class="stat-value" id="stat-nuevos">—</div>
       </div>
     </div>
 
-    <div class="table-container">
-      <div class="table-toolbar">
-        <strong style="font-size:15px">Últimos clientes</strong>
+    <div class="dashboard-grid">
+      <div class="widget">
+        <div class="widget-header">
+          <span>Últimos clientes</span>
+          <a href="/clientes.html" class="btn btn-secondary btn-sm">Ver todos</a>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Empresa</th>
+              <th>Origen</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-ultimos-clientes">
+            <tr><td colspan="3" class="loading">Cargando...</td></tr>
+          </tbody>
+        </table>
       </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Empresa</th>
-            <th>Origen</th>
-            <th>Registrado</th>
-          </tr>
-        </thead>
-        <tbody id="tabla-ultimos-clientes">
-          <tr><td colspan="4" class="loading">Cargando...</td></tr>
-        </tbody>
-      </table>
+
+      <div class="widget">
+        <div class="widget-header">
+          <span>Últimos pedidos</span>
+          <a href="/pedidos.html" class="btn btn-secondary btn-sm">Ver todos</a>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>N° Pedido</th>
+              <th>Cliente</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-ultimos-pedidos">
+            <tr><td colspan="3" class="loading">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
+
   </div>
 
   <script src="js/config.js"></script>
@@ -69,9 +104,16 @@
       whatsapp: '<span class="badge badge-whatsapp">📱 WhatsApp</span>',
       manual: '<span class="badge badge-manual">✏️ Manual</span>'
     }
+    const BADGES_PEDIDO = {
+      pendiente: '<span class="badge badge-pendiente">Pendiente</span>',
+      en_produccion: '<span class="badge badge-en_produccion">En producción</span>',
+      listo: '<span class="badge badge-listo">Listo</span>',
+      entregado: '<span class="badge badge-entregado">Entregado</span>',
+      pagado: '<span class="badge badge-pagado">Pagado</span>'
+    }
 
     function formatFecha(iso) {
-      return new Date(iso).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })
+      return new Date(iso).toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })
     }
 
     async function cargarDashboard() {
@@ -79,43 +121,60 @@
       if (!session) return
       await mostrarUsuario()
 
-      const [
-        { count: totalClientes },
-        { count: cotizacionesActivas },
-        { count: enProduccion },
-        { data: ultimosClientes }
-      ] = await Promise.all([
-        db.from('clientes').select('*', { count: 'exact', head: true }),
-        db.from('cotizaciones').select('*', { count: 'exact', head: true }).in('estado', ['enviada', 'aprobada']),
-        db.from('cotizaciones').select('*', { count: 'exact', head: true }).eq('estado', 'en_produccion'),
-        db.from('clientes').select('nombre, empresa, fuente, created_at').order('created_at', { ascending: false }).limit(5)
-      ])
+      document.getElementById('welcome-date').textContent = new Date().toLocaleDateString('es-SV', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+      })
 
       const inicioMes = new Date()
       inicioMes.setDate(1)
       inicioMes.setHours(0, 0, 0, 0)
-      const { count: nuevosEsteMes } = await db.from('clientes')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', inicioMes.toISOString())
+
+      const [
+        { count: totalClientes },
+        { count: cotPendientes },
+        { count: pedEnProduccion },
+        { count: nuevosEsteMes },
+        { data: ultimosClientes },
+        { data: ultimosPedidos }
+      ] = await Promise.all([
+        db.from('clientes').select('*', { count: 'exact', head: true }),
+        db.from('cotizaciones').select('*', { count: 'exact', head: true }).in('estado', ['borrador', 'enviada']),
+        db.from('pedidos').select('*', { count: 'exact', head: true }).eq('estado', 'en_produccion'),
+        db.from('clientes').select('*', { count: 'exact', head: true }).gte('created_at', inicioMes.toISOString()),
+        db.from('clientes').select('nombre, empresa, fuente, created_at').order('created_at', { ascending: false }).limit(5),
+        db.from('pedidos').select('numero, estado, total, created_at, clientes(nombre)').order('created_at', { ascending: false }).limit(5)
+      ])
 
       document.getElementById('stat-clientes').textContent = totalClientes ?? 0
-      document.getElementById('stat-cotizaciones').textContent = cotizacionesActivas ?? 0
-      document.getElementById('stat-produccion').textContent = enProduccion ?? 0
+      document.getElementById('stat-cotizaciones').textContent = cotPendientes ?? 0
+      document.getElementById('stat-produccion').textContent = pedEnProduccion ?? 0
       document.getElementById('stat-nuevos').textContent = nuevosEsteMes ?? 0
 
-      const tbody = document.getElementById('tabla-ultimos-clientes')
+      const tbodyClientes = document.getElementById('tabla-ultimos-clientes')
       if (!ultimosClientes?.length) {
-        tbody.innerHTML = '<tr><td colspan="4" class="empty-state"><p>Aún no hay clientes</p></td></tr>'
-        return
+        tbodyClientes.innerHTML = '<tr><td colspan="3" class="empty-state"><p>Aún no hay clientes</p></td></tr>'
+      } else {
+        tbodyClientes.innerHTML = ultimosClientes.map(c => `
+          <tr>
+            <td>${c.nombre}</td>
+            <td>${c.empresa || '—'}</td>
+            <td>${BADGES_FUENTE[c.fuente] || c.fuente}</td>
+          </tr>
+        `).join('')
       }
-      tbody.innerHTML = ultimosClientes.map(c => `
-        <tr>
-          <td>${c.nombre}</td>
-          <td>${c.empresa || '—'}</td>
-          <td>${BADGES_FUENTE[c.fuente] || c.fuente}</td>
-          <td>${formatFecha(c.created_at)}</td>
-        </tr>
-      `).join('')
+
+      const tbodyPedidos = document.getElementById('tabla-ultimos-pedidos')
+      if (!ultimosPedidos?.length) {
+        tbodyPedidos.innerHTML = '<tr><td colspan="3" class="empty-state"><p>Aún no hay pedidos</p></td></tr>'
+      } else {
+        tbodyPedidos.innerHTML = ultimosPedidos.map(p => `
+          <tr>
+            <td><strong>${p.numero}</strong></td>
+            <td>${p.clientes?.nombre || '—'}</td>
+            <td>${BADGES_PEDIDO[p.estado] || p.estado}</td>
+          </tr>
+        `).join('')
+      }
     }
 
     cargarDashboard()

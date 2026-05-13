@@ -1,10 +1,9 @@
 let todasLasCotizaciones = []
 let filtroActivo = 'todas'
 
-const ESTADOS = ['borrador', 'enviada', 'aprobada', 'en_produccion', 'entregada']
-const ETIQUETAS_ESTADO = {
-  borrador: 'Borrador', enviada: 'Enviada', aprobada: 'Aprobada',
-  en_produccion: 'En producción', entregada: 'Entregada'
+const ESTADOS_COT = ['borrador', 'enviada', 'aprobada', 'rechazada']
+const ETIQUETAS_COT = {
+  borrador: 'Borrador', enviada: 'Enviada', aprobada: 'Aprobada', rechazada: 'Rechazada'
 }
 
 async function cargarCotizaciones() {
@@ -33,11 +32,16 @@ function renderizarCotizaciones() {
       <td><strong>${c.numero}</strong></td>
       <td>${c.clientes?.nombre || '—'}<br><small style="color:#718096">${c.clientes?.empresa || ''}</small></td>
       <td>$${Number(c.total).toFixed(2)}</td>
-      <td><span class="badge badge-${c.estado}">${ETIQUETAS_ESTADO[c.estado]}</span></td>
+      <td><span class="badge badge-${c.estado}">${ETIQUETAS_COT[c.estado] || c.estado}</span></td>
       <td>
-        <select class="btn btn-secondary btn-sm" onchange="cambiarEstado('${c.id}', this.value)">
-          ${ESTADOS.map(e => `<option value="${e}" ${c.estado === e ? 'selected' : ''}>${ETIQUETAS_ESTADO[e]}</option>`).join('')}
-        </select>
+        ${c.estado === 'aprobada' || c.estado === 'rechazada'
+          ? `<span style="font-size:12px;color:#718096;font-style:italic">Estado final</span>`
+          : `<select class="btn btn-secondary btn-sm" onchange="cambiarEstado('${c.id}', this.value, '${c.estado}')">
+              ${ESTADOS_COT.filter(e => e !== 'aprobada' || c.estado !== 'rechazada')
+                .map(e => `<option value="${e}" ${c.estado === e ? 'selected' : ''}>${ETIQUETAS_COT[e]}</option>`)
+                .join('')}
+            </select>`
+        }
       </td>
     </tr>
   `).join('')
@@ -51,11 +55,35 @@ function aplicarFiltro(estado) {
   renderizarCotizaciones()
 }
 
-async function cambiarEstado(id, nuevoEstado) {
+async function cambiarEstado(id, nuevoEstado, estadoActual) {
+  if (nuevoEstado === estadoActual) return
+
+  const cotizacion = todasLasCotizaciones.find(c => c.id === id)
+  if (!cotizacion) return
+
   const { error } = await db
     .from('cotizaciones')
     .update({ estado: nuevoEstado })
     .eq('id', id)
-  if (error) { alert('Error al cambiar estado'); return }
+
+  if (error) { alert('Error al cambiar estado: ' + error.message); return }
+
+  if (nuevoEstado === 'aprobada') {
+    const numeroPedido = 'PED-' + cotizacion.numero.replace(/^#/, '')
+    const { error: errPedido } = await db.from('pedidos').insert({
+      cotizacion_id: id,
+      cliente_id: cotizacion.cliente_id,
+      numero: numeroPedido,
+      estado: 'pendiente',
+      total: cotizacion.total,
+      notas: cotizacion.notas || ''
+    })
+    if (errPedido) {
+      console.error('Error creando pedido:', errPedido)
+    } else {
+      alert(`Cotización aprobada.\nSe creó el pedido ${numeroPedido} automáticamente en la sección Pedidos.`)
+    }
+  }
+
   await cargarCotizaciones()
 }

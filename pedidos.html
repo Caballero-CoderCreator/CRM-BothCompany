@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cotizaciones — CRM Both Company</title>
+  <title>Pedidos — CRM Both Company</title>
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
@@ -11,8 +11,8 @@
   <nav class="nav">
     <a href="/dashboard.html" class="nav-brand">Both Company</a>
     <a href="/clientes.html">Clientes</a>
-    <a href="/cotizaciones.html" class="active">Cotizaciones</a>
-    <a href="/pedidos.html">Pedidos</a>
+    <a href="/cotizaciones.html">Cotizaciones</a>
+    <a href="/pedidos.html" class="active">Pedidos</a>
     <div class="nav-spacer"></div>
     <span class="nav-user" id="nav-user-email"></span>
     <button class="btn-logout" onclick="logout()">Salir</button>
@@ -20,32 +20,32 @@
 
   <div class="page">
     <div class="page-header">
-      <h1 class="page-title">Cotizaciones</h1>
-      <a href="/cotizacion-nueva.html" class="btn btn-primary">+ Nueva cotización</a>
+      <h1 class="page-title">Pedidos</h1>
     </div>
 
     <div class="table-container">
       <div class="table-toolbar">
         <div class="filtros">
-          <button class="filtro-btn active" data-estado="todas" onclick="aplicarFiltro('todas')">Todas</button>
-          <button class="filtro-btn" data-estado="borrador" onclick="aplicarFiltro('borrador')">Borrador</button>
-          <button class="filtro-btn" data-estado="enviada" onclick="aplicarFiltro('enviada')">Enviada</button>
-          <button class="filtro-btn" data-estado="aprobada" onclick="aplicarFiltro('aprobada')">Aprobada</button>
-          <button class="filtro-btn" data-estado="rechazada" onclick="aplicarFiltro('rechazada')">Rechazada</button>
+          <button class="filtro-btn active" data-estado="todos" onclick="aplicarFiltroPedido('todos')">Todos</button>
+          <button class="filtro-btn" data-estado="pendiente" onclick="aplicarFiltroPedido('pendiente')">Pendiente</button>
+          <button class="filtro-btn" data-estado="en_produccion" onclick="aplicarFiltroPedido('en_produccion')">En producción</button>
+          <button class="filtro-btn" data-estado="listo" onclick="aplicarFiltroPedido('listo')">Listo</button>
+          <button class="filtro-btn" data-estado="entregado" onclick="aplicarFiltroPedido('entregado')">Entregado</button>
+          <button class="filtro-btn" data-estado="pagado" onclick="aplicarFiltroPedido('pagado')">Pagado</button>
         </div>
       </div>
       <table>
         <thead>
           <tr>
-            <th>N°</th>
+            <th>N° Pedido</th>
             <th>Cliente</th>
             <th>Total</th>
             <th>Estado</th>
             <th>Cambiar estado</th>
           </tr>
         </thead>
-        <tbody id="tabla-cotizaciones">
-          <tr><td colspan="5" class="loading">Cargando cotizaciones...</td></tr>
+        <tbody id="tabla-pedidos">
+          <tr><td colspan="5" class="loading">Cargando pedidos...</td></tr>
         </tbody>
       </table>
     </div>
@@ -53,13 +53,13 @@
 
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/cotizaciones.js"></script>
+  <script src="js/pedidos.js"></script>
   <script>
     async function init() {
       const session = await requireAuth()
       if (!session) return
       await mostrarUsuario()
-      await cargarCotizaciones()
+      await cargarPedidos()
     }
     init()
   </script>
