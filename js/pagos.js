@@ -3,6 +3,8 @@ let todosPagos    = []
 let filtroActivo  = 'todos'
 let textoBusqueda = ''
 let pedidoSeleccionado = null
+let chartDonut = null
+let chartLinea  = null
 
 // ── CARGA ──
 async function cargarPagos() {
@@ -17,6 +19,7 @@ async function cargarPagos() {
   todosPedidos = pedidos || []
   todosPagos   = pagos   || []
   renderStats()
+  renderGraficos()
   renderTabla()
 }
 
@@ -182,6 +185,127 @@ async function guardarPago() {
   if (error) { alert('Error: ' + error.message); return }
   cerrarModalPago()
   await cargarPagos()
+}
+
+// ── GRÁFICOS ──
+function agruparPorMes(n = 6) {
+  const now = new Date()
+  const etiquetas = [], valores = []
+  for (let i = n - 1; i >= 0; i--) {
+    const d   = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    etiquetas.push(d.toLocaleDateString('es-SV', { month: 'short', year: '2-digit' }))
+    valores.push(
+      todosPagos
+        .filter(p => {
+          const pd = new Date(p.created_at)
+          return `${pd.getFullYear()}-${String(pd.getMonth() + 1).padStart(2, '0')}` === key
+        })
+        .reduce((s, p) => s + Number(p.monto || 0), 0)
+    )
+  }
+  return { etiquetas, valores }
+}
+
+function tendenciaLineal(vals) {
+  const n = vals.length
+  if (n < 2) return vals.slice()
+  const xMed = (n - 1) / 2
+  const yMed = vals.reduce((s, v) => s + v, 0) / n
+  let num = 0, den = 0
+  vals.forEach((y, x) => { num += (x - xMed) * (y - yMed); den += (x - xMed) ** 2 })
+  const m = den ? num / den : 0
+  const b = yMed - m * xMed
+  return vals.map((_, x) => Math.max(0, +(m * x + b).toFixed(2)))
+}
+
+function renderGraficos() {
+  // ── DONUT ──
+  const cobrado   = todosPagos.reduce((s, p) => s + Number(p.monto || 0), 0)
+  const pendiente = todosPedidos.reduce((s, ped) => {
+    return s + Math.max(0, Number(ped.total || 0) - pagadoDe(ped.id))
+  }, 0)
+
+  const ctxD = document.getElementById('chart-donut').getContext('2d')
+  if (chartDonut) chartDonut.destroy()
+  chartDonut = new Chart(ctxD, {
+    type: 'doughnut',
+    data: {
+      labels: ['Cobrado', 'Por cobrar'],
+      datasets: [{
+        data: [cobrado, pendiente],
+        backgroundColor: ['rgba(39,103,73,.15)', 'rgba(197,48,48,.12)'],
+        borderColor:     ['#276749', '#c53030'],
+        borderWidth: 2,
+        hoverOffset: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '70%',
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 12 }, padding: 14 } },
+        tooltip: {
+          callbacks: { label: ctx => ` $${Number(ctx.raw).toFixed(2)}` }
+        }
+      }
+    }
+  })
+
+  // ── LÍNEA + TENDENCIA ──
+  const { etiquetas, valores } = agruparPorMes(6)
+  const tendencia = tendenciaLineal(valores)
+
+  const ctxL = document.getElementById('chart-linea').getContext('2d')
+  if (chartLinea) chartLinea.destroy()
+  chartLinea = new Chart(ctxL, {
+    type: 'line',
+    data: {
+      labels: etiquetas,
+      datasets: [
+        {
+          label: 'Cobrado ($)',
+          data: valores,
+          borderColor: '#C4923A',
+          backgroundColor: 'rgba(196,146,58,.08)',
+          borderWidth: 2.5,
+          pointBackgroundColor: '#C4923A',
+          pointRadius: 5,
+          tension: 0.4,
+          fill: true
+        },
+        {
+          label: 'Tendencia',
+          data: tendencia,
+          borderColor: '#9ca3af',
+          borderWidth: 1.5,
+          borderDash: [6, 4],
+          pointRadius: 0,
+          tension: 0,
+          fill: false
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 12 }, padding: 14 } },
+        tooltip: {
+          callbacks: { label: ctx => ` $${Number(ctx.raw).toFixed(2)}` }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 12 } } },
+        y: {
+          beginAtZero: true,
+          grid: { color: '#f3f4f6' },
+          ticks: { font: { size: 12 }, callback: v => '$' + v }
+        }
+      }
+    }
+  })
 }
 
 // ── UTILS ──

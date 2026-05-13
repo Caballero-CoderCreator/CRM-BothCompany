@@ -6,6 +6,7 @@
   <title>Pagos — CRM Both Company</title>
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     .badge-pago {
       display: inline-block; padding: 3px 10px; border-radius: 20px;
@@ -83,6 +84,29 @@
             <div class="stat-label">Sin pagar</div>
             <div class="stat-value" id="stat-sinpagar">—</div>
           </div>
+        </div>
+
+        <!-- ── GRÁFICOS ── -->
+        <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:24px">
+
+          <!-- Donut: estado de cobranza -->
+          <div style="background:#fff;border-radius:12px;padding:22px 20px;box-shadow:0 1px 3px rgba(0,0,0,.07)">
+            <div style="font-size:14px;font-weight:700;color:#2d3748">Estado de cobranza</div>
+            <div style="font-size:12px;color:#9ca3af;margin-bottom:14px">Cobrado vs por cobrar</div>
+            <div style="position:relative;height:210px">
+              <canvas id="chart-donut"></canvas>
+            </div>
+          </div>
+
+          <!-- Line: cobros por mes + tendencia -->
+          <div style="background:#fff;border-radius:12px;padding:22px 20px;box-shadow:0 1px 3px rgba(0,0,0,.07)">
+            <div style="font-size:14px;font-weight:700;color:#2d3748">Cobros por mes</div>
+            <div style="font-size:12px;color:#9ca3af;margin-bottom:14px">Últimos 6 meses · línea de tendencia punteada</div>
+            <div style="position:relative;height:210px">
+              <canvas id="chart-linea"></canvas>
+            </div>
+          </div>
+
         </div>
 
         <!-- ── FILTROS Y BÚSQUEDA ── -->
