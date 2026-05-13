@@ -157,6 +157,24 @@
       <button class="btn btn-primary" onclick="abrirModalSeccion()">+ Nueva sección</button>
     </div>
 
+    <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 20px;">
+      <div class="stat-card">
+        <span class="stat-icon">🗂️</span>
+        <div class="stat-label">Secciones</div>
+        <div class="stat-value" id="stat-secciones">—</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">📦</span>
+        <div class="stat-label">Productos</div>
+        <div class="stat-value" id="stat-productos">—</div>
+      </div>
+      <div class="stat-card" style="display:flex;flex-direction:column;justify-content:center;">
+        <div class="stat-label" style="margin-bottom:10px;">Buscar producto</div>
+        <input type="text" class="search-input" style="width:100%;font-size:13px;"
+          placeholder="Nombre del producto..." oninput="buscarEnCatalogo(this.value)">
+      </div>
+    </div>
+
     <!-- Leyenda de colores -->
     <div class="leyenda">
       <div class="ley-item"><div class="ley-dot" style="background:#9ca3af;"></div> Base</div>

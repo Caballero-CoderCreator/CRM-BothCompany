@@ -47,6 +47,29 @@
       <a href="/cotizacion-nueva.html" class="btn btn-primary">+ Nueva cotización</a>
     </div>
 
+    <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
+      <div class="stat-card">
+        <span class="stat-icon">📝</span>
+        <div class="stat-label">Borrador</div>
+        <div class="stat-value" id="stat-borrador">—</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">📤</span>
+        <div class="stat-label">Enviadas</div>
+        <div class="stat-value" id="stat-enviada">—</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">✅</span>
+        <div class="stat-label">Aprobadas</div>
+        <div class="stat-value" id="stat-aprobada">—</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">❌</span>
+        <div class="stat-label">Rechazadas</div>
+        <div class="stat-value" id="stat-rechazada">—</div>
+      </div>
+    </div>
+
     <div class="table-container">
       <div class="table-toolbar">
         <div class="filtros">
@@ -56,19 +79,22 @@
           <button class="filtro-btn" data-estado="aprobada" onclick="aplicarFiltro('aprobada')">Aprobada</button>
           <button class="filtro-btn" data-estado="rechazada" onclick="aplicarFiltro('rechazada')">Rechazada</button>
         </div>
+        <input type="text" class="search-input" placeholder="Buscar por cliente o N° cotización..."
+          oninput="buscarCotizaciones(this.value)" style="margin-left:auto">
       </div>
       <table>
         <thead>
           <tr>
             <th>N°</th>
             <th>Cliente</th>
+            <th>Fecha</th>
             <th>Total</th>
             <th>Estado</th>
             <th>Cambiar estado</th>
           </tr>
         </thead>
         <tbody id="tabla-cotizaciones">
-          <tr><td colspan="5" class="loading">Cargando cotizaciones...</td></tr>
+          <tr><td colspan="6" class="loading">Cargando cotizaciones...</td></tr>
         </tbody>
       </table>
     </div>

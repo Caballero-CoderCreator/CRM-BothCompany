@@ -21,6 +21,8 @@ const TIPOS_LABELS = {
   custom: '— Sin clasificar'
 }
 
+let textoBusquedaCat = ''
+
 // ── CARGA Y RENDER ──
 async function cargarCatalogo() {
   const [{ data: secs }, { data: prods }] = await Promise.all([
@@ -31,6 +33,18 @@ async function cargarCatalogo() {
     ...s,
     productos: (prods || []).filter(p => p.seccion_id === s.id)
   }))
+  renderizarStatsCatalogo()
+  renderCatalogo()
+}
+
+function renderizarStatsCatalogo() {
+  document.getElementById('stat-secciones').textContent = secciones.length
+  document.getElementById('stat-productos').textContent =
+    secciones.reduce((acc, s) => acc + (s.productos?.length || 0), 0)
+}
+
+function buscarEnCatalogo(texto) {
+  textoBusquedaCat = texto.toLowerCase().trim()
   renderCatalogo()
 }
 
@@ -44,6 +58,26 @@ function renderCatalogo() {
       </div>`
     return
   }
+
+  if (textoBusquedaCat) {
+    const secsFiltradas = secciones
+      .map(s => ({
+        ...s,
+        productos: (s.productos || []).filter(p =>
+          (p.nombre || '').toLowerCase().includes(textoBusquedaCat) ||
+          (p.notas || '').toLowerCase().includes(textoBusquedaCat)
+        )
+      }))
+      .filter(s => s.productos.length > 0)
+
+    if (!secsFiltradas.length) {
+      container.innerHTML = `<div class="empty-cat"><p>No se encontraron productos con ese nombre.</p></div>`
+      return
+    }
+    container.innerHTML = secsFiltradas.map(s => renderSeccion(s)).join('')
+    return
+  }
+
   container.innerHTML = secciones.map(s => renderSeccion(s)).join('')
 }
 
