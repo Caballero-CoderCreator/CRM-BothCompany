@@ -28,6 +28,11 @@
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
   <script>
+    // Si el URL tiene token de recovery, ir a la página de reset
+    if (window.location.hash.includes('type=recovery')) {
+      window.location.href = '/reset-password.html' + window.location.hash
+    }
+
     db.auth.getSession().then(({ data: { session } }) => {
       if (session) window.location.href = '/dashboard.html'
     })
