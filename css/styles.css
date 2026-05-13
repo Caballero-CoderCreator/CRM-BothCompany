@@ -190,7 +190,7 @@ body {
 .btn-logout:hover { border-color: #e53e3e; color: #e53e3e; }
 
 /* ── PAGE ── */
-.page { max-width: 1100px; margin: 0 auto; padding: 28px 24px; }
+.page { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
 .page-title { font-size: 24px; font-weight: 700; }
 

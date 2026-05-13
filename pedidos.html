@@ -46,6 +46,29 @@
       <h1 class="page-title">Pedidos</h1>
     </div>
 
+    <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
+      <div class="stat-card">
+        <span class="stat-icon">⏳</span>
+        <div class="stat-label">Pendientes</div>
+        <div class="stat-value" id="stat-pendientes">—</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">🏭</span>
+        <div class="stat-label">En producción</div>
+        <div class="stat-value" id="stat-en-produccion">—</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">✅</span>
+        <div class="stat-label">Listos</div>
+        <div class="stat-value" id="stat-listos">—</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">📦</span>
+        <div class="stat-label">Completados</div>
+        <div class="stat-value" id="stat-completados">—</div>
+      </div>
+    </div>
+
     <div class="table-container">
       <div class="table-toolbar">
         <div class="filtros">
@@ -56,19 +79,22 @@
           <button class="filtro-btn" data-estado="entregado" onclick="aplicarFiltroPedido('entregado')">Entregado</button>
           <button class="filtro-btn" data-estado="pagado" onclick="aplicarFiltroPedido('pagado')">Pagado</button>
         </div>
+        <input type="text" class="search-input" placeholder="Buscar por cliente o N° pedido..."
+          oninput="buscarPedidos(this.value)" style="margin-left:auto">
       </div>
       <table>
         <thead>
           <tr>
             <th>N° Pedido</th>
             <th>Cliente</th>
+            <th>Fecha</th>
             <th>Total</th>
             <th>Estado</th>
             <th>Cambiar estado</th>
           </tr>
         </thead>
         <tbody id="tabla-pedidos">
-          <tr><td colspan="5" class="loading">Cargando pedidos...</td></tr>
+          <tr><td colspan="6" class="loading">Cargando pedidos...</td></tr>
         </tbody>
       </table>
     </div>
