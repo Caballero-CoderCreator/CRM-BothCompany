@@ -330,13 +330,11 @@ async function guardarEdicion() {
     }
 
     msg.style.color = '#16a34a'
-    msg.textContent = `✅ ${cot.numero} actualizado correctamente.`
-    btn.textContent = 'Guardado'
+    msg.textContent = `✅ ${cot.numero} guardado. Puedes seguir editando.`
+    btn.disabled = false
+    btn.textContent = 'Guardar y regenerar PDF'
 
-    setTimeout(async () => {
-      cerrarModalEditar()
-      await cargarCotizaciones()
-    }, 1200)
+    await cargarCotizaciones()
 
   } catch (err) {
     msg.style.color = '#ef4444'

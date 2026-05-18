@@ -352,13 +352,11 @@ async function guardarEdicionCot() {
     }
 
     msg.style.color = '#16a34a'
-    msg.textContent = `✅ ${cot.numero} actualizado correctamente.`
-    btn.textContent = 'Guardado'
+    msg.textContent = `✅ ${cot.numero} guardado. Puedes seguir editando.`
+    btn.disabled = false
+    btn.textContent = 'Guardar y regenerar PDF'
 
-    setTimeout(async () => {
-      cerrarModalEditarCot()
-      await cargarPerfil()
-    }, 1200)
+    await cargarPerfil()
   } catch (err) {
     msg.style.color = '#ef4444'
     msg.textContent = 'Error: ' + err.message
