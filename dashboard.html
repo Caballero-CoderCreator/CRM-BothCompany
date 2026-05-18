@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -6,6 +6,7 @@
   <title>Dashboard — CRM Both Company</title>
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div class="layout">
@@ -21,6 +22,8 @@
         <a href="/pedidos.html" class="nav-item"><span class="nav-icon">📦</span> Pedidos</a>
         <a href="/catalogo.html" class="nav-item"><span class="nav-icon">🗂️</span> Catálogo</a>
         <a href="/pagos.html" class="nav-item"><span class="nav-icon">💳</span> Pagos</a>
+        <a href="/tareas.html" class="nav-item"><span class="nav-icon">✅</span> Tareas</a>
+        <a href="https://bot-bothcompany-production.up.railway.app" target="_blank" class="nav-item"><span class="nav-icon">📱</span> WhatsApp</a>
       </nav>
       <div class="sidebar-bottom">
         <a href="https://cotizador-both-company-production.up.railway.app/" target="_blank" class="btn btn-primary sidebar-cta">+ Nueva cotización</a>
@@ -55,44 +58,59 @@
       </div>
     </div>
 
+    <!-- Alertas de seguimiento -->
+    <div id="alertas-container"></div>
+
+    <!-- Stats -->
     <div class="stats-grid">
       <div class="stat-card c-blue">
         <span class="stat-icon">👥</span>
         <div class="stat-label">Total clientes</div>
         <div class="stat-value" id="stat-clientes">—</div>
       </div>
-      <div class="stat-card c-amber">
-        <span class="stat-icon">📋</span>
-        <div class="stat-label">Cotizaciones pendientes</div>
-        <div class="stat-value" id="stat-cotizaciones">—</div>
-      </div>
       <div class="stat-card c-green">
+        <span class="stat-icon">💰</span>
+        <div class="stat-label">Ingresos este mes</div>
+        <div class="stat-value" id="stat-ingresos">—</div>
+        <div class="stat-delta" id="stat-ingresos-delta"></div>
+      </div>
+      <div class="stat-card c-amber">
+        <span class="stat-icon">📊</span>
+        <div class="stat-label">Tasa de conversión</div>
+        <div class="stat-value" id="stat-conversion">—</div>
+        <div class="stat-delta" style="font-size:11px;color:#718096" id="stat-conversion-sub"></div>
+      </div>
+      <div class="stat-card c-purple">
         <span class="stat-icon">🏭</span>
         <div class="stat-label">Pedidos en producción</div>
         <div class="stat-value" id="stat-produccion">—</div>
       </div>
-      <div class="stat-card c-purple">
-        <span class="stat-icon">⭐</span>
-        <div class="stat-label">Nuevos este mes</div>
-        <div class="stat-value" id="stat-nuevos">—</div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="dashboard-grid" style="grid-template-columns: 2fr 1fr; margin-bottom:24px">
+      <div class="widget">
+        <div class="widget-header"><span>Ingresos últimos 6 meses</span></div>
+        <canvas id="chart-ingresos" height="120"></canvas>
+      </div>
+      <div class="widget">
+        <div class="widget-header"><span>Estado cotizaciones</span></div>
+        <canvas id="chart-cotizaciones" height="120"></canvas>
       </div>
     </div>
 
+    <!-- Tablas -->
     <div class="dashboard-grid">
       <div class="widget">
         <div class="widget-header">
-          <span>Últimos clientes</span>
+          <span>Top 5 clientes</span>
           <a href="/clientes.html" class="btn btn-secondary btn-sm">Ver todos</a>
         </div>
         <table>
           <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Empresa</th>
-              <th>Origen</th>
-            </tr>
+            <tr><th>Cliente</th><th>Empresa</th><th>Total pedidos</th></tr>
           </thead>
-          <tbody id="tabla-ultimos-clientes">
+          <tbody id="tabla-top-clientes">
             <tr><td colspan="3" class="loading">Cargando...</td></tr>
           </tbody>
         </table>
@@ -105,11 +123,7 @@
         </div>
         <table>
           <thead>
-            <tr>
-              <th>N° Pedido</th>
-              <th>Cliente</th>
-              <th>Estado</th>
-            </tr>
+            <tr><th>N° Pedido</th><th>Cliente</th><th>Estado</th></tr>
           </thead>
           <tbody id="tabla-ultimos-pedidos">
             <tr><td colspan="3" class="loading">Cargando...</td></tr>
@@ -125,21 +139,23 @@
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
   <script>
-    const BADGES_FUENTE = {
-      web: '<span class="badge badge-web">🌐 Web</span>',
-      whatsapp: '<span class="badge badge-whatsapp">📱 WhatsApp</span>',
-      manual: '<span class="badge badge-manual">✏️ Manual</span>'
-    }
     const BADGES_PEDIDO = {
-      pendiente: '<span class="badge badge-pendiente">Pendiente</span>',
+      pendiente:     '<span class="badge badge-pendiente">Pendiente</span>',
       en_produccion: '<span class="badge badge-en_produccion">En producción</span>',
-      listo: '<span class="badge badge-listo">Listo</span>',
-      entregado: '<span class="badge badge-entregado">Entregado</span>',
-      pagado: '<span class="badge badge-pagado">Pagado</span>'
+      listo:         '<span class="badge badge-listo">Listo</span>',
+      entregado:     '<span class="badge badge-entregado">Entregado</span>',
+      pagado:        '<span class="badge badge-pagado">Pagado</span>'
     }
 
-    function formatFecha(iso) {
-      return new Date(iso).toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })
+    function fmtMoney(n) { return '$' + Number(n).toFixed(2) }
+    function fmtPct(n)   { return n.toFixed(1) + '%' }
+
+    function deltaHTML(actual, anterior) {
+      if (!anterior) return ''
+      const pct = ((actual - anterior) / anterior * 100)
+      const sign = pct >= 0 ? '▲' : '▼'
+      const color = pct >= 0 ? '#16a34a' : '#dc2626'
+      return `<span style="font-size:12px;color:${color}">${sign} ${Math.abs(pct).toFixed(1)}% vs mes anterior</span>`
     }
 
     async function cargarDashboard() {
@@ -151,56 +167,194 @@
         weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
       })
 
-      const inicioMes = new Date()
-      inicioMes.setDate(1)
-      inicioMes.setHours(0, 0, 0, 0)
+      const ahora    = new Date()
+      const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1)
+      const inicioAnt = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1)
+      const finAnt    = new Date(ahora.getFullYear(), ahora.getMonth(), 1)
 
       const [
         { count: totalClientes },
-        { count: cotPendientes },
         { count: pedEnProduccion },
-        { count: nuevosEsteMes },
-        { data: ultimosClientes },
-        { data: ultimosPedidos }
+        { data: todasCotizaciones },
+        { data: todosPedidos },
+        { data: todosPagos },
+        { data: todosClientes }
       ] = await Promise.all([
         db.from('clientes').select('*', { count: 'exact', head: true }),
-        db.from('cotizaciones').select('*', { count: 'exact', head: true }).in('estado', ['borrador', 'enviada']),
         db.from('pedidos').select('*', { count: 'exact', head: true }).eq('estado', 'en_produccion'),
-        db.from('clientes').select('*', { count: 'exact', head: true }).gte('created_at', inicioMes.toISOString()),
-        db.from('clientes').select('nombre, empresa, fuente, created_at').order('created_at', { ascending: false }).limit(5),
-        db.from('pedidos').select('numero, estado, total, created_at, clientes(nombre)').order('created_at', { ascending: false }).limit(5)
+        db.from('cotizaciones').select('id, estado, created_at, cliente_id'),
+        db.from('pedidos').select('id, numero, estado, total, created_at, cliente_id, clientes(nombre, empresa)').order('created_at', { ascending: false }),
+        db.from('pagos').select('monto, created_at, pedido_id'),
+        db.from('clientes').select('id, nombre, empresa')
       ])
 
-      document.getElementById('stat-clientes').textContent = totalClientes ?? 0
-      document.getElementById('stat-cotizaciones').textContent = cotPendientes ?? 0
-      document.getElementById('stat-produccion').textContent = pedEnProduccion ?? 0
-      document.getElementById('stat-nuevos').textContent = nuevosEsteMes ?? 0
+      document.getElementById('stat-clientes').textContent    = totalClientes ?? 0
+      document.getElementById('stat-produccion').textContent  = pedEnProduccion ?? 0
 
-      const tbodyClientes = document.getElementById('tabla-ultimos-clientes')
-      if (!ultimosClientes?.length) {
-        tbodyClientes.innerHTML = '<tr><td colspan="3" class="empty-state"><p>Aún no hay clientes</p></td></tr>'
-      } else {
-        tbodyClientes.innerHTML = ultimosClientes.map(c => `
-          <tr>
-            <td>${c.nombre}</td>
-            <td>${c.empresa || '—'}</td>
-            <td>${BADGES_FUENTE[c.fuente] || c.fuente}</td>
-          </tr>
-        `).join('')
+      // Ingresos este mes vs anterior
+      const ingresosMes = (todosPagos || [])
+        .filter(p => new Date(p.created_at) >= inicioMes)
+        .reduce((s, p) => s + Number(p.monto), 0)
+      const ingresosAnt = (todosPagos || [])
+        .filter(p => new Date(p.created_at) >= inicioAnt && new Date(p.created_at) < finAnt)
+        .reduce((s, p) => s + Number(p.monto), 0)
+
+      document.getElementById('stat-ingresos').textContent = fmtMoney(ingresosMes)
+      document.getElementById('stat-ingresos-delta').innerHTML = deltaHTML(ingresosMes, ingresosAnt)
+
+      // Conversión
+      const cotTotal    = (todasCotizaciones || []).length
+      const cotAprobadas = (todasCotizaciones || []).filter(c => c.estado === 'aprobada').length
+      const tasaConv = cotTotal ? (cotAprobadas / cotTotal * 100) : 0
+      document.getElementById('stat-conversion').textContent = fmtPct(tasaConv)
+      document.getElementById('stat-conversion-sub').textContent = `${cotAprobadas} aprobadas de ${cotTotal}`
+
+      // Alertas
+      renderAlertas(todasCotizaciones || [], todosPedidos || [], todosPagos || [])
+
+      // Chart ingresos por mes
+      renderChartIngresos(todosPagos || [])
+
+      // Chart cotizaciones estado
+      renderChartCotizaciones(todasCotizaciones || [])
+
+      // Top 5 clientes
+      const gastosPorCliente = {}
+      ;(todosPedidos || []).forEach(p => {
+        if (!p.cliente_id) return
+        gastosPorCliente[p.cliente_id] = (gastosPorCliente[p.cliente_id] || 0) + Number(p.total || 0)
+      })
+      const top5 = Object.entries(gastosPorCliente)
+        .sort((a, b) => b[1] - a[1]).slice(0, 5)
+        .map(([id, total]) => {
+          const c = (todosClientes || []).find(cl => cl.id === id)
+          return { nombre: c?.nombre || '—', empresa: c?.empresa || '—', total }
+        })
+
+      const tbodyTop = document.getElementById('tabla-top-clientes')
+      tbodyTop.innerHTML = top5.length
+        ? top5.map(c => `<tr><td><strong>${c.nombre}</strong></td><td style="color:#718096">${c.empresa}</td><td>${fmtMoney(c.total)}</td></tr>`).join('')
+        : '<tr><td colspan="3" class="empty-state"><p>Sin datos aún</p></td></tr>'
+
+      // Últimos 5 pedidos
+      const ultPedidos = (todosPedidos || []).slice(0, 5)
+      const tbodyPed = document.getElementById('tabla-ultimos-pedidos')
+      tbodyPed.innerHTML = ultPedidos.length
+        ? ultPedidos.map(p => `
+            <tr>
+              <td><strong>${p.numero}</strong></td>
+              <td>${p.clientes?.nombre || '—'}</td>
+              <td>${BADGES_PEDIDO[p.estado] || p.estado}</td>
+            </tr>`).join('')
+        : '<tr><td colspan="3" class="empty-state"><p>Aún no hay pedidos</p></td></tr>'
+    }
+
+    function renderAlertas(cotizaciones, pedidos, pagos) {
+      const alertas = []
+      const ahora = Date.now()
+      const TRES_DIAS = 3 * 86400000
+
+      // Cotizaciones enviadas sin respuesta > 3 días
+      const cotFrias = cotizaciones.filter(c =>
+        c.estado === 'enviada' && (ahora - new Date(c.created_at)) > TRES_DIAS
+      )
+      if (cotFrias.length) {
+        alertas.push({
+          tipo: 'warning',
+          icono: '⏰',
+          mensaje: `${cotFrias.length} cotización${cotFrias.length > 1 ? 'es' : ''} enviada${cotFrias.length > 1 ? 's' : ''} sin respuesta hace más de 3 días`,
+          link: '/cotizaciones.html',
+          linkTexto: 'Ver cotizaciones'
+        })
       }
 
-      const tbodyPedidos = document.getElementById('tabla-ultimos-pedidos')
-      if (!ultimosPedidos?.length) {
-        tbodyPedidos.innerHTML = '<tr><td colspan="3" class="empty-state"><p>Aún no hay pedidos</p></td></tr>'
-      } else {
-        tbodyPedidos.innerHTML = ultimosPedidos.map(p => `
-          <tr>
-            <td><strong>${p.numero}</strong></td>
-            <td>${p.clientes?.nombre || '—'}</td>
-            <td>${BADGES_PEDIDO[p.estado] || p.estado}</td>
-          </tr>
-        `).join('')
+      // Pedidos listos o entregados sin pago registrado
+      const idsPagados = new Set(pagos.map(p => p.pedido_id))
+      const pedSinCobrar = pedidos.filter(p =>
+        (p.estado === 'listo' || p.estado === 'entregado') && !idsPagados.has(p.id)
+      )
+      if (pedSinCobrar.length) {
+        alertas.push({
+          tipo: 'danger',
+          icono: '💸',
+          mensaje: `${pedSinCobrar.length} pedido${pedSinCobrar.length > 1 ? 's' : ''} listo${pedSinCobrar.length > 1 ? 's' : ''}/entregado${pedSinCobrar.length > 1 ? 's' : ''} sin pago registrado`,
+          link: '/pagos.html',
+          linkTexto: 'Ir a Pagos'
+        })
       }
+
+      const container = document.getElementById('alertas-container')
+      if (!alertas.length) { container.innerHTML = ''; return }
+      container.innerHTML = alertas.map(a => `
+        <div class="alerta alerta-${a.tipo}">
+          <span>${a.icono} ${a.mensaje}</span>
+          <a href="${a.link}" class="btn btn-sm" style="margin-left:auto;white-space:nowrap">${a.linkTexto} →</a>
+        </div>
+      `).join('')
+    }
+
+    function renderChartIngresos(pagos) {
+      const meses = []
+      const labels = []
+      const ahora = new Date()
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1)
+        meses.push(d)
+        labels.push(d.toLocaleDateString('es-SV', { month: 'short', year: '2-digit' }))
+      }
+
+      const valores = meses.map((d, idx) => {
+        const siguiente = idx < meses.length - 1 ? meses[idx + 1] : new Date(ahora.getFullYear(), ahora.getMonth() + 1, 1)
+        return pagos
+          .filter(p => new Date(p.created_at) >= d && new Date(p.created_at) < siguiente)
+          .reduce((s, p) => s + Number(p.monto), 0)
+      })
+
+      new Chart(document.getElementById('chart-ingresos'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Ingresos ($)',
+            data: valores,
+            borderColor: '#C4923A',
+            backgroundColor: 'rgba(196,146,58,0.1)',
+            tension: 0.3,
+            fill: true,
+            pointBackgroundColor: '#C4923A'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, ticks: { callback: v => '$' + v } }
+          }
+        }
+      })
+    }
+
+    function renderChartCotizaciones(cotizaciones) {
+      const estados = { borrador: 0, enviada: 0, aprobada: 0, rechazada: 0 }
+      cotizaciones.forEach(c => { if (estados[c.estado] !== undefined) estados[c.estado]++ })
+
+      new Chart(document.getElementById('chart-cotizaciones'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Borrador', 'Enviada', 'Aprobada', 'Rechazada'],
+          datasets: [{
+            data: [estados.borrador, estados.enviada, estados.aprobada, estados.rechazada],
+            backgroundColor: ['#94a3b8', '#f59e0b', '#16a34a', '#dc2626'],
+            borderWidth: 2,
+            borderColor: '#fff'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+          cutout: '65%'
+        }
+      })
     }
 
     cargarDashboard()

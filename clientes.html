@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -21,6 +21,8 @@
         <a href="/pedidos.html" class="nav-item"><span class="nav-icon">📦</span> Pedidos</a>
         <a href="/catalogo.html" class="nav-item"><span class="nav-icon">🗂️</span> Catálogo</a>
         <a href="/pagos.html" class="nav-item"><span class="nav-icon">💳</span> Pagos</a>
+        <a href="/tareas.html" class="nav-item"><span class="nav-icon">✅</span> Tareas</a>
+        <a href="https://bot-bothcompany-production.up.railway.app" target="_blank" class="nav-item"><span class="nav-icon">📱</span> WhatsApp</a>
       </nav>
       <div class="sidebar-bottom">
         <a href="https://cotizador-both-company-production.up.railway.app/" target="_blank" class="btn btn-primary sidebar-cta">+ Nueva cotización</a>
@@ -49,9 +51,10 @@
     </div>
 
     <div class="table-container">
-      <div class="table-toolbar">
+      <div class="table-toolbar" style="flex-wrap:wrap;gap:10px">
         <input type="text" class="search-input" placeholder="Buscar por nombre, empresa o teléfono..."
           oninput="buscarClientes(this.value)">
+        <button class="btn btn-secondary" onclick="exportarCSV()" title="Exportar a Excel/CSV" style="margin-left:auto">📥 Exportar</button>
       </div>
       <table>
         <thead>

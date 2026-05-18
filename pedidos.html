@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -21,6 +21,8 @@
         <a href="/pedidos.html" class="nav-item active"><span class="nav-icon">📦</span> Pedidos</a>
         <a href="/catalogo.html" class="nav-item"><span class="nav-icon">🗂️</span> Catálogo</a>
         <a href="/pagos.html" class="nav-item"><span class="nav-icon">💳</span> Pagos</a>
+        <a href="/tareas.html" class="nav-item"><span class="nav-icon">✅</span> Tareas</a>
+        <a href="https://bot-bothcompany-production.up.railway.app" target="_blank" class="nav-item"><span class="nav-icon">📱</span> WhatsApp</a>
       </nav>
       <div class="sidebar-bottom">
         <a href="https://cotizador-both-company-production.up.railway.app/" target="_blank" class="btn btn-primary sidebar-cta">+ Nueva cotización</a>
@@ -71,7 +73,7 @@
     </div>
 
     <div class="table-container">
-      <div class="table-toolbar">
+      <div class="table-toolbar" style="flex-wrap:wrap;gap:10px">
         <div class="filtros">
           <button class="filtro-btn active" data-estado="todos" onclick="aplicarFiltroPedido('todos')">Todos</button>
           <button class="filtro-btn" data-estado="pendiente" onclick="aplicarFiltroPedido('pendiente')">Pendiente</button>
@@ -80,8 +82,11 @@
           <button class="filtro-btn" data-estado="entregado" onclick="aplicarFiltroPedido('entregado')">Entregado</button>
           <button class="filtro-btn" data-estado="pagado" onclick="aplicarFiltroPedido('pagado')">Pagado</button>
         </div>
-        <input type="text" class="search-input" placeholder="Buscar por cliente o N° pedido..."
-          oninput="buscarPedidos(this.value)" style="margin-left:auto">
+        <div style="display:flex;gap:8px;margin-left:auto">
+          <input type="text" class="search-input" placeholder="Buscar por cliente o N° pedido..."
+            oninput="buscarPedidos(this.value)">
+          <button class="btn btn-secondary" onclick="exportarCSV()" title="Exportar a Excel/CSV">📥 Exportar</button>
+        </div>
       </div>
       <table>
         <thead>
@@ -92,14 +97,33 @@
             <th>Total</th>
             <th>Estado</th>
             <th>Cambiar estado</th>
+            <th>Nota</th>
           </tr>
         </thead>
         <tbody id="tabla-pedidos">
-          <tr><td colspan="6" class="loading">Cargando pedidos...</td></tr>
+          <tr><td colspan="7" class="loading">Cargando pedidos...</td></tr>
         </tbody>
       </table>
     </div>
   </div>
+    </div>
+  </div>
+
+  <!-- Modal nota -->
+  <div class="modal-overlay" id="modal-nota" onclick="if(event.target===this)cerrarModalNota()">
+    <div class="modal" style="max-width:440px">
+      <div class="modal-header">
+        <span class="modal-title">📝 Nota — <span id="nota-ref"></span></span>
+        <button class="btn-close" onclick="cerrarModalNota()">✕</button>
+      </div>
+      <div class="form-group">
+        <label>Nota interna</label>
+        <textarea id="nota-texto" style="min-height:100px" placeholder="Ej: Cliente confirmó colores el 10 de mayo..."></textarea>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-secondary" onclick="cerrarModalNota()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-guardar-nota" onclick="guardarNota()">Guardar</button>
+      </div>
     </div>
   </div>
 
