@@ -338,6 +338,19 @@ async function guardarEdicionCot() {
     const result = await resp.json()
     if (!resp.ok) throw new Error(result.error || 'Error al actualizar')
 
+    // Descargar PDF regenerado
+    if (result.pdfBase64) {
+      const blob = new Blob(
+        [Uint8Array.from(atob(result.pdfBase64), c => c.charCodeAt(0))],
+        { type: 'application/pdf' }
+      )
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `${cot.numero}.pdf`
+      a.click()
+      URL.revokeObjectURL(a.href)
+    }
+
     msg.style.color = '#16a34a'
     msg.textContent = `✅ ${cot.numero} actualizado correctamente.`
     btn.textContent = 'Guardado'
