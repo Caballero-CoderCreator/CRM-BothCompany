@@ -259,9 +259,9 @@ function renderizarItemsCot() {
     <tr>
       <td><input type="text" value="${escCot(item.descripcion)}" oninput="editarItemsCot[${idx}].descripcion=this.value" style="width:100%;min-width:140px" class="form-input-sm"></td>
       <td><input type="text" value="${escCot(item.tallas)}" oninput="editarItemsCot[${idx}].tallas=this.value" style="width:100%;min-width:80px" class="form-input-sm" placeholder="Opcional"></td>
-      <td><input type="number" value="${item.cantidad}" min="1" step="1" oninput="editarItemsCot[${idx}].cantidad=+this.value;recalcularTotalesCot()" style="width:64px" class="form-input-sm"></td>
-      <td><input type="number" value="${item.precioUnit}" min="0" step="0.01" oninput="editarItemsCot[${idx}].precioUnit=+this.value;recalcularTotalesCot()" style="width:80px" class="form-input-sm"></td>
-      <td style="text-align:right;white-space:nowrap">$${((item.cantidad||0)*(item.precioUnit||0)).toFixed(2)}</td>
+      <td><input type="number" value="${item.cantidad}" min="1" step="1" oninput="editarItemsCot[${idx}].cantidad=+this.value;actualizarFilaCot(${idx})" style="width:64px" class="form-input-sm"></td>
+      <td><input type="number" value="${item.precioUnit}" min="0" step="0.01" oninput="editarItemsCot[${idx}].precioUnit=+this.value;actualizarFilaCot(${idx})" style="width:80px" class="form-input-sm"></td>
+      <td id="cotrow-total-${idx}" style="text-align:right;white-space:nowrap">$${((item.cantidad||0)*(item.precioUnit||0)).toFixed(2)}</td>
       <td style="text-align:center"><button onclick="eliminarFilaCot(${idx})" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:16px;line-height:1" title="Eliminar línea">✕</button></td>
     </tr>`).join('')
 }
@@ -278,6 +278,12 @@ function eliminarFilaCot(idx) {
   recalcularTotalesCot()
 }
 
+function actualizarFilaCot(idx) {
+  const cell = document.getElementById('cotrow-total-' + idx)
+  if (cell) cell.textContent = '$' + ((editarItemsCot[idx].cantidad||0)*(editarItemsCot[idx].precioUnit||0)).toFixed(2)
+  recalcularTotalesCot()
+}
+
 function recalcularTotalesCot() {
   const conIva   = document.getElementById('editarcot-con-iva').checked
   const subtotal = editarItemsCot.reduce((s, i) => s + (i.cantidad||0)*(i.precioUnit||0), 0)
@@ -288,7 +294,10 @@ function recalcularTotalesCot() {
   document.getElementById('editarcot-iva').textContent      = conIva ? '$' + iva.toFixed(2) : '—'
   document.getElementById('editarcot-total').textContent    = '$' + total.toFixed(2)
 
-  renderizarItemsCot()
+  editarItemsCot.forEach((_, i) => {
+    const cell = document.getElementById('cotrow-total-' + i)
+    if (cell) cell.textContent = '$' + ((editarItemsCot[i].cantidad||0)*(editarItemsCot[i].precioUnit||0)).toFixed(2)
+  })
 }
 
 async function guardarEdicionCot() {

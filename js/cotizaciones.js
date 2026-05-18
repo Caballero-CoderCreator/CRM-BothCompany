@@ -225,9 +225,9 @@ function renderizarItemsEditar() {
     <tr>
       <td><input type="text" value="${esc(item.descripcion)}" oninput="editarItems[${idx}].descripcion=this.value" style="width:100%;min-width:140px" class="form-input-sm"></td>
       <td><input type="text" value="${esc(item.tallas)}" oninput="editarItems[${idx}].tallas=this.value" style="width:100%;min-width:80px" class="form-input-sm" placeholder="Opcional"></td>
-      <td><input type="number" value="${item.cantidad}" min="1" step="1" oninput="editarItems[${idx}].cantidad=+this.value;recalcularTotalesEditar()" style="width:64px" class="form-input-sm"></td>
-      <td><input type="number" value="${item.precioUnit}" min="0" step="0.01" oninput="editarItems[${idx}].precioUnit=+this.value;recalcularTotalesEditar()" style="width:80px" class="form-input-sm"></td>
-      <td style="text-align:right;white-space:nowrap">$${((item.cantidad||0)*(item.precioUnit||0)).toFixed(2)}</td>
+      <td><input type="number" value="${item.cantidad}" min="1" step="1" oninput="editarItems[${idx}].cantidad=+this.value;actualizarFilaEditar(${idx})" style="width:64px" class="form-input-sm"></td>
+      <td><input type="number" value="${item.precioUnit}" min="0" step="0.01" oninput="editarItems[${idx}].precioUnit=+this.value;actualizarFilaEditar(${idx})" style="width:80px" class="form-input-sm"></td>
+      <td id="row-total-${idx}" style="text-align:right;white-space:nowrap">$${((item.cantidad||0)*(item.precioUnit||0)).toFixed(2)}</td>
       <td style="text-align:center"><button onclick="eliminarFilaEditar(${idx})" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:16px;line-height:1" title="Eliminar línea">✕</button></td>
     </tr>`).join('')
 }
@@ -248,8 +248,14 @@ function eliminarFilaEditar(idx) {
   recalcularTotalesEditar()
 }
 
+function actualizarFilaEditar(idx) {
+  const cell = document.getElementById('row-total-' + idx)
+  if (cell) cell.textContent = '$' + ((editarItems[idx].cantidad||0)*(editarItems[idx].precioUnit||0)).toFixed(2)
+  recalcularTotalesEditar()
+}
+
 function recalcularTotalesEditar() {
-  const conIva = document.getElementById('editar-con-iva').checked
+  const conIva   = document.getElementById('editar-con-iva').checked
   const subtotal = editarItems.reduce((s, i) => s + (i.cantidad||0)*(i.precioUnit||0), 0)
   const iva      = conIva ? subtotal * 0.13 : 0
   const total    = subtotal + iva
@@ -258,8 +264,11 @@ function recalcularTotalesEditar() {
   document.getElementById('editar-iva').textContent      = conIva ? '$' + iva.toFixed(2) : '—'
   document.getElementById('editar-total').textContent    = '$' + total.toFixed(2)
 
-  // Actualizar totales de fila en la tabla
-  renderizarItemsEditar()
+  // Al activar/desactivar IVA actualizar celdas de fila sin re-renderizar
+  editarItems.forEach((_, i) => {
+    const cell = document.getElementById('row-total-' + i)
+    if (cell) cell.textContent = '$' + ((editarItems[i].cantidad||0)*(editarItems[i].precioUnit||0)).toFixed(2)
+  })
 }
 
 async function guardarEdicion() {
