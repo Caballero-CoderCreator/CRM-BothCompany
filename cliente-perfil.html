@@ -112,10 +112,11 @@
                   <th>Fecha</th>
                   <th>Total</th>
                   <th>Estado</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody id="tabla-cot-perfil">
-                <tr><td colspan="4" class="loading">Cargando...</td></tr>
+                <tr><td colspan="5" class="loading">Cargando...</td></tr>
               </tbody>
             </table>
           </div>
@@ -202,6 +203,114 @@
       </div>
     </div>
   </div>
+
+  <!-- ── MODAL EDITAR COTIZACIÓN (desde perfil) ── -->
+  <div class="modal-overlay" id="modal-editar-cot" onclick="if(event.target===this)cerrarModalEditarCot()">
+    <div class="modal" style="max-width:780px;width:95%">
+      <div class="modal-header">
+        <span class="modal-title">✏️ Editar — <span id="editarcot-numero"></span></span>
+        <button class="btn-close" onclick="cerrarModalEditarCot()">✕</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="form-group" style="margin:0">
+          <label>Cliente</label>
+          <input type="text" id="editarcot-cliente" class="form-input" placeholder="Nombre del cliente">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Contacto</label>
+          <input type="text" id="editarcot-contacto" class="form-input" placeholder="Persona de contacto (opcional)">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="form-group" style="margin:0">
+          <label>Forma de pago</label>
+          <select id="editarcot-forma-pago" class="form-input">
+            <option value="">— Seleccionar —</option>
+            <option value="50/50">50% anticipo — 50% contra entrega</option>
+            <option value="40/30/30">40/30/30 escalonado</option>
+            <option value="contraentrega">100% contra entrega</option>
+            <option value="credito30">Crédito a 30 días</option>
+            <option value="cheque">Cheque</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Tiempo de entrega</label>
+          <select id="editarcot-entrega" class="form-input">
+            <option value="5 días">5 días</option>
+            <option value="7 días">7 días</option>
+            <option value="10 días">10 días</option>
+            <option value="15 días">15 días</option>
+            <option value="20 días">20 días</option>
+            <option value="25 días">25 días</option>
+            <option value="30 días">30 días</option>
+            <option value="35 días">35 días</option>
+            <option value="40 días">40 días</option>
+            <option value="45 días">45 días</option>
+            <option value="A convenir">A convenir</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:20px;margin-bottom:14px;font-size:13px">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="checkbox" id="editarcot-con-iva" onchange="recalcularTotalesCot()"> Con IVA (13%)
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="checkbox" id="editarcot-con-banco"> Mostrar datos bancarios
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="checkbox" id="editarcot-con-firma"> Incluir firma
+        </label>
+      </div>
+
+      <div id="editarcot-aviso-sin-datos" style="display:none;background:#fef9c3;border:1px solid #fde68a;border-radius:6px;padding:8px 12px;font-size:12px;color:#92400e;margin-bottom:12px">
+        ⚠️ Esta cotización fue creada antes de la actualización. Ingresa los productos manualmente basándote en el PDF original.
+      </div>
+
+      <div style="margin-bottom:8px;font-weight:600;font-size:13px">Productos</div>
+      <div style="overflow-x:auto;margin-bottom:10px">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="background:#f1f5f9">
+              <th style="padding:7px 10px;text-align:left">Descripción</th>
+              <th style="padding:7px 10px;text-align:left;width:120px">Tallas</th>
+              <th style="padding:7px 10px;text-align:center;width:72px">Cant.</th>
+              <th style="padding:7px 10px;text-align:center;width:90px">P. Unit.</th>
+              <th style="padding:7px 10px;text-align:right;width:90px">Total</th>
+              <th style="width:36px"></th>
+            </tr>
+          </thead>
+          <tbody id="editarcot-items-body"></tbody>
+        </table>
+      </div>
+
+      <button class="btn btn-secondary btn-sm" onclick="agregarFilaCot()" style="margin-bottom:14px">+ Agregar línea</button>
+
+      <div style="display:flex;justify-content:flex-end;gap:20px;padding:10px 0;border-top:1px solid #e5e7eb;font-size:13px;font-weight:600">
+        <span>Subtotal: <span id="editarcot-subtotal" style="color:#1e293b">$0.00</span></span>
+        <span>IVA: <span id="editarcot-iva" style="color:#1e293b">—</span></span>
+        <span style="font-size:15px">Total: <span id="editarcot-total" style="color:#1a2e4a">$0.00</span></span>
+      </div>
+
+      <div id="editarcot-msg" style="font-size:13px;min-height:18px;margin-bottom:8px"></div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-secondary" onclick="cerrarModalEditarCot()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-guardar-edicion-cot" onclick="guardarEdicionCot()">Guardar y regenerar PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .form-input-sm {
+      border: 1px solid #d1d5db; border-radius: 5px;
+      padding: 4px 7px; font-size: 12px; outline: none; font-family: inherit;
+    }
+    .form-input-sm:focus { border-color: #3b82f6; }
+    #editarcot-items-body td { padding: 5px 6px; border-bottom: 1px solid #f1f5f9; }
+  </style>
 
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>

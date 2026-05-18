@@ -1,6 +1,11 @@
 let clienteId   = null
 let clienteData  = null
 const BUCKET     = 'archivos-clientes'
+const COTIZADOR_URL_PERFIL = 'https://cotizador-both-company-production.up.railway.app'
+
+let modalEditarCotId = null
+let editarItemsCot   = []
+let cotizacionesPerfil = []
 
 // ── CARGA PRINCIPAL ──
 async function cargarPerfil() {
@@ -14,7 +19,7 @@ async function cargarPerfil() {
     { data: pedidos }
   ] = await Promise.all([
     db.from('clientes').select('*').eq('id', clienteId).single(),
-    db.from('cotizaciones').select('*').eq('cliente_id', clienteId).order('created_at', { ascending: false }),
+    db.from('cotizaciones').select('*').eq('cliente_id', clienteId).neq('estado', 'eliminado').order('created_at', { ascending: false }),
     db.from('pedidos').select('*').eq('cliente_id', clienteId).order('created_at', { ascending: false })
   ])
 
@@ -61,7 +66,8 @@ function renderPerfil(c, cotizaciones, pedidos) {
   document.getElementById('stat-ultimo').textContent  =
     pedidos[0] ? formatFecha(pedidos[0].created_at) : '—'
 
-  renderTablaCotizaciones(cotizaciones)
+  cotizacionesPerfil = cotizaciones || []
+  renderTablaCotizaciones(cotizacionesPerfil)
   renderTablaPedidos(pedidos)
   cargarArchivos()
 }
@@ -78,16 +84,27 @@ const ESTADOS_PED = { pendiente: 'Pendiente', en_produccion: 'En producción', l
 function renderTablaCotizaciones(cots) {
   const tbody = document.getElementById('tabla-cot-perfil')
   if (!cots.length) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-state" style="padding:30px">Sin cotizaciones aún.</td></tr>'
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state" style="padding:30px">Sin cotizaciones aún.</td></tr>'
     return
   }
-  tbody.innerHTML = cots.map(c => `
+  tbody.innerHTML = cots.map(c => {
+    const puedeEditar  = c.estado === 'borrador' || c.estado === 'enviada'
+    const puedeEliminar = c.estado === 'borrador'
+    return `
     <tr>
-      <td><strong>${c.numero}</strong></td>
+      <td>
+        <strong>${c.numero}</strong>
+        ${c.pdf_url ? `<div style="margin-top:3px"><a href="${c.pdf_url}" target="_blank" style="font-size:11px;color:#3b82f6;text-decoration:none;font-weight:500">📄 Ver PDF</a></div>` : ''}
+      </td>
       <td style="color:#718096;font-size:13px">${formatFecha(c.created_at)}</td>
       <td>$${Number(c.total).toFixed(2)}</td>
       <td><span class="badge badge-${c.estado}">${ESTADOS_COT[c.estado] || c.estado}</span></td>
-    </tr>`).join('')
+      <td style="white-space:nowrap">
+        ${puedeEditar  ? `<button class="btn btn-secondary btn-sm" onclick="abrirModalEditarCot('${c.id}')" style="margin-right:4px">✏️ Editar</button>` : ''}
+        ${puedeEliminar ? `<button class="btn btn-secondary btn-sm" onclick="eliminarCotPerfil('${c.id}','${c.numero}')" style="color:#ef4444">🗑️</button>` : ''}
+      </td>
+    </tr>`
+  }).join('')
 }
 
 function renderTablaPedidos(peds) {
@@ -180,6 +197,152 @@ async function eliminarArchivo(nombre) {
   const { error } = await db.storage.from(BUCKET).remove([`${clienteId}/${nombre}`])
   if (error) { alert('Error: ' + error.message); return }
   await cargarArchivos()
+}
+
+// ── ELIMINAR BORRADOR (desde perfil) ──
+async function eliminarCotPerfil(id, numero) {
+  if (!confirm(`¿Eliminar el borrador ${numero}?\n\nEl correlativo no se verá afectado.`)) return
+  const { error } = await db.from('cotizaciones').update({ estado: 'eliminado' }).eq('id', id)
+  if (error) { alert('Error al eliminar: ' + error.message); return }
+  cotizacionesPerfil = cotizacionesPerfil.filter(c => c.id !== id)
+  renderTablaCotizaciones(cotizacionesPerfil)
+}
+
+// ── MODAL EDITAR COTIZACIÓN (desde perfil) ──
+function abrirModalEditarCot(id) {
+  const cot = cotizacionesPerfil.find(c => c.id === id)
+  if (!cot) return
+
+  modalEditarCotId = id
+  const d = cot.datos || {}
+
+  document.getElementById('editarcot-numero').textContent   = cot.numero
+  document.getElementById('editarcot-cliente').value        = d.cliente  || cot.nombre || clienteData?.nombre || ''
+  document.getElementById('editarcot-contacto').value       = d.contacto || ''
+  document.getElementById('editarcot-forma-pago').value     = d.formaPagoKey || ''
+  document.getElementById('editarcot-entrega').value        = d.entrega  || '30 días'
+  document.getElementById('editarcot-con-iva').checked      = !!d.conIva
+  document.getElementById('editarcot-con-banco').checked    = !!d.conBanco
+  document.getElementById('editarcot-con-firma').checked    = !!d.conFirma
+
+  editarItemsCot = d.items
+    ? d.items.map(i => ({ ...i }))
+    : [{ descripcion: '', tallas: '', cantidad: 1, precioUnit: 0, total: 0 }]
+
+  renderizarItemsCot()
+  recalcularTotalesCot()
+
+  const aviso = document.getElementById('editarcot-aviso-sin-datos')
+  if (aviso) aviso.style.display = cot.datos ? 'none' : 'block'
+
+  document.getElementById('editarcot-msg').textContent = ''
+  document.getElementById('modal-editar-cot').classList.add('visible')
+}
+
+function cerrarModalEditarCot() {
+  document.getElementById('modal-editar-cot').classList.remove('visible')
+  modalEditarCotId = null
+  editarItemsCot   = []
+}
+
+function escCot(s) {
+  return (s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+function renderizarItemsCot() {
+  const tbody = document.getElementById('editarcot-items-body')
+  if (!editarItemsCot.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:12px">Sin productos. Agrega una línea.</td></tr>'
+    return
+  }
+  tbody.innerHTML = editarItemsCot.map((item, idx) => `
+    <tr>
+      <td><input type="text" value="${escCot(item.descripcion)}" oninput="editarItemsCot[${idx}].descripcion=this.value" style="width:100%;min-width:140px" class="form-input-sm"></td>
+      <td><input type="text" value="${escCot(item.tallas)}" oninput="editarItemsCot[${idx}].tallas=this.value" style="width:100%;min-width:80px" class="form-input-sm" placeholder="Opcional"></td>
+      <td><input type="number" value="${item.cantidad}" min="1" step="1" oninput="editarItemsCot[${idx}].cantidad=+this.value;recalcularTotalesCot()" style="width:64px" class="form-input-sm"></td>
+      <td><input type="number" value="${item.precioUnit}" min="0" step="0.01" oninput="editarItemsCot[${idx}].precioUnit=+this.value;recalcularTotalesCot()" style="width:80px" class="form-input-sm"></td>
+      <td style="text-align:right;white-space:nowrap">$${((item.cantidad||0)*(item.precioUnit||0)).toFixed(2)}</td>
+      <td style="text-align:center"><button onclick="eliminarFilaCot(${idx})" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:16px;line-height:1" title="Eliminar línea">✕</button></td>
+    </tr>`).join('')
+}
+
+function agregarFilaCot() {
+  editarItemsCot.push({ descripcion: '', tallas: '', cantidad: 1, precioUnit: 0, total: 0 })
+  renderizarItemsCot()
+  recalcularTotalesCot()
+}
+
+function eliminarFilaCot(idx) {
+  editarItemsCot.splice(idx, 1)
+  renderizarItemsCot()
+  recalcularTotalesCot()
+}
+
+function recalcularTotalesCot() {
+  const conIva   = document.getElementById('editarcot-con-iva').checked
+  const subtotal = editarItemsCot.reduce((s, i) => s + (i.cantidad||0)*(i.precioUnit||0), 0)
+  const iva      = conIva ? subtotal * 0.13 : 0
+  const total    = subtotal + iva
+
+  document.getElementById('editarcot-subtotal').textContent = '$' + subtotal.toFixed(2)
+  document.getElementById('editarcot-iva').textContent      = conIva ? '$' + iva.toFixed(2) : '—'
+  document.getElementById('editarcot-total').textContent    = '$' + total.toFixed(2)
+
+  renderizarItemsCot()
+}
+
+async function guardarEdicionCot() {
+  if (!modalEditarCotId) return
+  const cot = cotizacionesPerfil.find(c => c.id === modalEditarCotId)
+  if (!cot) return
+
+  if (!editarItemsCot.length) { alert('Agrega al menos un producto.'); return }
+
+  const cliente   = document.getElementById('editarcot-cliente').value.trim()
+  const contacto  = document.getElementById('editarcot-contacto').value.trim()
+  const formaPago = document.getElementById('editarcot-forma-pago').value
+  const entrega   = document.getElementById('editarcot-entrega').value
+  const conIva    = document.getElementById('editarcot-con-iva').checked
+  const conBanco  = document.getElementById('editarcot-con-banco').checked
+  const conFirma  = document.getElementById('editarcot-con-firma').checked
+
+  if (!cliente)   { alert('El nombre del cliente es obligatorio.'); return }
+  if (!formaPago) { alert('Selecciona una forma de pago.'); return }
+
+  const btn = document.getElementById('btn-guardar-edicion-cot')
+  const msg = document.getElementById('editarcot-msg')
+  btn.disabled = true
+  btn.textContent = 'Generando PDF...'
+  msg.textContent = ''
+
+  try {
+    const resp = await fetch(`${COTIZADOR_URL_PERFIL}/actualizar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        numero: cot.numero, cliente, contacto,
+        items: editarItemsCot, formaPago, entrega,
+        validez: cot.datos?.validez || '15 días',
+        conIva, conBanco, conFirma,
+      }),
+    })
+    const result = await resp.json()
+    if (!resp.ok) throw new Error(result.error || 'Error al actualizar')
+
+    msg.style.color = '#16a34a'
+    msg.textContent = `✅ ${cot.numero} actualizado correctamente.`
+    btn.textContent = 'Guardado'
+
+    setTimeout(async () => {
+      cerrarModalEditarCot()
+      await cargarPerfil()
+    }, 1200)
+  } catch (err) {
+    msg.style.color = '#ef4444'
+    msg.textContent = 'Error: ' + err.message
+    btn.disabled = false
+    btn.textContent = 'Guardar y regenerar PDF'
+  }
 }
 
 // ── MODAL EDITAR CLIENTE ──

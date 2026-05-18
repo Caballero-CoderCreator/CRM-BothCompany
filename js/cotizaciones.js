@@ -58,7 +58,7 @@ function renderizarCotizaciones() {
     return
   }
   tbody.innerHTML = lista.map(c => {
-    const puedeEditar = (c.estado === 'borrador' || c.estado === 'enviada') && c.datos
+    const puedeEditar = c.estado === 'borrador' || c.estado === 'enviada'
     const puedeEliminar = c.estado === 'borrador'
     return `
     <tr>
@@ -180,28 +180,30 @@ async function guardarNota() {
 // ── EDITAR COTIZACIÓN ──
 function abrirModalEditar(id) {
   const cot = todasLasCotizaciones.find(c => c.id === id)
-  if (!cot || !cot.datos) { alert('Esta cotización no tiene datos editables guardados.'); return }
+  if (!cot) return
 
   modalEditarId = id
-  const d = cot.datos
+  const d = cot.datos || {}
 
   document.getElementById('editar-numero').textContent = cot.numero
-  document.getElementById('editar-cliente').value  = d.cliente || ''
+  document.getElementById('editar-cliente').value  = d.cliente || cot.clientes?.nombre || ''
   document.getElementById('editar-contacto').value = d.contacto || ''
 
-  const selPago = document.getElementById('editar-forma-pago')
-  selPago.value = d.formaPagoKey || ''
+  document.getElementById('editar-forma-pago').value = d.formaPagoKey || ''
+  document.getElementById('editar-entrega').value    = d.entrega || '30 días'
 
-  const selEntrega = document.getElementById('editar-entrega')
-  selEntrega.value = d.entrega || '30 días'
+  document.getElementById('editar-con-iva').checked   = !!d.conIva
+  document.getElementById('editar-con-banco').checked = !!d.conBanco
+  document.getElementById('editar-con-firma').checked = !!d.conFirma
 
-  document.getElementById('editar-con-iva').checked    = !!d.conIva
-  document.getElementById('editar-con-banco').checked  = !!d.conBanco
-  document.getElementById('editar-con-firma').checked  = !!d.conFirma
+  editarItems = d.items ? d.items.map(i => ({ ...i }))
+    : [{ descripcion: '', tallas: '', cantidad: 1, precioUnit: 0, total: 0 }]
 
-  editarItems = (d.items || []).map(i => ({ ...i }))
   renderizarItemsEditar()
   recalcularTotalesEditar()
+
+  const aviso = document.getElementById('editar-aviso-sin-datos')
+  if (aviso) aviso.style.display = cot.datos ? 'none' : 'block'
 
   document.getElementById('editar-msg').textContent = ''
   document.getElementById('modal-editar').classList.add('visible')
