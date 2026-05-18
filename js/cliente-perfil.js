@@ -33,8 +33,8 @@ async function cargarPerfil() {
 function calcularBadgesPerfil(pedidos) {
   const totalGastado = pedidos.reduce((s, p) => s + Number(p.total || 0), 0)
   const numPedidos   = pedidos.length
-  const esVIP        = totalGastado >= 500
-  const esFrecuente  = numPedidos   >= 3
+  const esVIP        = totalGastado >= 5000
+  const esFrecuente  = numPedidos   >= 5
 
   const tags = []
   if (esVIP && esFrecuente) tags.push('<span class="badge-tag premium">💎 Premium</span>')

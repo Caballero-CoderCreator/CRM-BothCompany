@@ -22,8 +22,8 @@ function calcularBadges(clienteId, createdAt) {
   const numPedidos   = peds.length
   const diasDesde    = (Date.now() - new Date(createdAt)) / 86400000
 
-  const esVIP       = totalGastado >= 500
-  const esFrecuente = numPedidos   >= 3
+  const esVIP       = totalGastado >= 5000
+  const esFrecuente = numPedidos   >= 5
   const esNuevo     = diasDesde    <= 30 && numPedidos === 0
 
   const tags = []
