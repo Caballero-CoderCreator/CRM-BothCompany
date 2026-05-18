@@ -21,7 +21,6 @@ async function cargarCotizaciones() {
   const { data, error } = await db
     .from('cotizaciones')
     .select('*, clientes(nombre, empresa)')
-    .not('estado', 'eq', 'eliminado')
     .order('created_at', { ascending: false })
 
   if (error) { console.error(error); return }
@@ -36,12 +35,20 @@ function renderizarStats() {
   document.getElementById('stat-enviada').textContent   = contar('enviada')
   document.getElementById('stat-aprobada').textContent  = contar('aprobada')
   document.getElementById('stat-rechazada').textContent = contar('rechazada')
+
+  const nEliminadas = contar('eliminado')
+  const badge = document.getElementById('stat-papelera')
+  if (badge) badge.textContent = nEliminadas > 0 ? nEliminadas : ''
 }
 
 function renderizarCotizaciones() {
-  let lista = filtroActivo === 'todas'
-    ? todasLasCotizaciones
-    : todasLasCotizaciones.filter(c => c.estado === filtroActivo)
+  const esPapelera = filtroActivo === 'papelera'
+
+  let lista = esPapelera
+    ? todasLasCotizaciones.filter(c => c.estado === 'eliminado')
+    : filtroActivo === 'todas'
+      ? todasLasCotizaciones.filter(c => c.estado !== 'eliminado')
+      : todasLasCotizaciones.filter(c => c.estado === filtroActivo)
 
   if (textoBusqueda.trim()) {
     const q = textoBusqueda.toLowerCase()
@@ -58,8 +65,28 @@ function renderizarCotizaciones() {
     return
   }
   tbody.innerHTML = lista.map(c => {
-    const puedeEditar = c.estado === 'borrador' || c.estado === 'enviada'
+    const puedeEditar   = c.estado === 'borrador' || c.estado === 'enviada'
     const puedeEliminar = c.estado === 'borrador'
+
+    if (esPapelera) {
+      return `
+      <tr style="opacity:.8">
+        <td>
+          <strong>${c.numero}</strong>
+          ${c.pdf_url ? `<div style="margin-top:3px"><a href="${c.pdf_url}" target="_blank" style="font-size:11px;color:#3b82f6;text-decoration:none;font-weight:500">📄 Ver PDF</a></div>` : ''}
+        </td>
+        <td>${c.clientes?.nombre || '—'}<br><small style="color:#718096">${c.clientes?.empresa || ''}</small></td>
+        <td style="white-space:nowrap;color:#718096;font-size:13px">${formatFecha(c.created_at)}</td>
+        <td>$${Number(c.total).toFixed(2)}</td>
+        <td><span class="badge" style="background:#f3f4f6;color:#6b7280">Eliminada</span></td>
+        <td colspan="3" style="white-space:nowrap">
+          <button class="btn btn-secondary btn-sm" onclick="restaurarCotizacion('${c.id}', '${c.numero}')">
+            ↩️ Restaurar
+          </button>
+        </td>
+      </tr>`
+    }
+
     return `
     <tr>
       <td>
@@ -145,6 +172,12 @@ async function eliminarCotizacion(id, numero) {
   const { error } = await db.from('cotizaciones').update({ estado: 'eliminado' }).eq('id', id)
   if (error) { alert('Error al eliminar: ' + error.message); return }
 
+  await cargarCotizaciones()
+}
+
+async function restaurarCotizacion(id, numero) {
+  const { error } = await db.from('cotizaciones').update({ estado: 'borrador' }).eq('id', id)
+  if (error) { alert('Error al restaurar: ' + error.message); return }
   await cargarCotizaciones()
 }
 
