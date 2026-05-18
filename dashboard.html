@@ -202,21 +202,22 @@
       document.getElementById('stat-ingresos').textContent = fmtMoney(ingresosMes)
       document.getElementById('stat-ingresos-delta').innerHTML = deltaHTML(ingresosMes, ingresosAnt)
 
-      // Conversión
-      const cotTotal    = (todasCotizaciones || []).length
-      const cotAprobadas = (todasCotizaciones || []).filter(c => c.estado === 'aprobada').length
+      // Conversión (excluye papelera)
+      const cotActivas   = (todasCotizaciones || []).filter(c => c.estado !== 'eliminado')
+      const cotTotal     = cotActivas.length
+      const cotAprobadas = cotActivas.filter(c => c.estado === 'aprobada').length
       const tasaConv = cotTotal ? (cotAprobadas / cotTotal * 100) : 0
       document.getElementById('stat-conversion').textContent = fmtPct(tasaConv)
       document.getElementById('stat-conversion-sub').textContent = `${cotAprobadas} aprobadas de ${cotTotal}`
 
       // Alertas
-      renderAlertas(todasCotizaciones || [], todosPedidos || [], todosPagos || [])
+      renderAlertas(cotActivas, todosPedidos || [], todosPagos || [])
 
       // Chart ingresos por mes
       renderChartIngresos(todosPagos || [])
 
-      // Chart cotizaciones estado
-      renderChartCotizaciones(todasCotizaciones || [])
+      // Chart cotizaciones estado (excluye papelera)
+      renderChartCotizaciones(cotActivas)
 
       // Top 5 clientes
       const gastosPorCliente = {}
