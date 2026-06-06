@@ -31,12 +31,20 @@ function renderizarStats() {
   document.getElementById('stat-en-produccion').textContent = contar('en_produccion')
   document.getElementById('stat-listos').textContent        = contar('listo')
   document.getElementById('stat-completados').textContent   = contar('entregado') + contar('pagado')
+
+  const nEliminados = contar('eliminado')
+  const badge = document.getElementById('stat-papelera-ped')
+  if (badge) badge.textContent = nEliminados > 0 ? nEliminados : ''
 }
 
 function renderizarPedidos() {
-  let lista = filtroActivo === 'todos'
-    ? todosPedidos
-    : todosPedidos.filter(p => p.estado === filtroActivo)
+  const esPapelera = filtroActivo === 'papelera'
+
+  let lista = esPapelera
+    ? todosPedidos.filter(p => p.estado === 'eliminado')
+    : filtroActivo === 'todos'
+      ? todosPedidos.filter(p => p.estado !== 'eliminado')
+      : todosPedidos.filter(p => p.estado === filtroActivo)
 
   if (textoBusqueda.trim()) {
     const q = textoBusqueda.toLowerCase()
@@ -49,10 +57,26 @@ function renderizarPedidos() {
 
   const tbody = document.getElementById('tabla-pedidos')
   if (!lista.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><p>No hay pedidos en este estado.</p></td></tr>'
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><p>No hay pedidos en este estado.</p></td></tr>'
     return
   }
-  tbody.innerHTML = lista.map(p => `
+  tbody.innerHTML = lista.map(p => {
+    if (esPapelera) {
+      return `
+      <tr style="opacity:.8">
+        <td><strong>${p.numero}</strong></td>
+        <td>${p.clientes?.nombre || '—'}<br><small style="color:#718096">${p.clientes?.empresa || ''}</small></td>
+        <td style="white-space:nowrap;color:#718096;font-size:13px">${formatFecha(p.created_at)}</td>
+        <td>$${Number(p.total).toFixed(2)}</td>
+        <td colspan="4" style="white-space:nowrap">
+          <span class="badge" style="background:#f3f4f6;color:#6b7280;margin-right:8px">Eliminado</span>
+          <button class="btn btn-secondary btn-sm" onclick="restaurarPedido('${p.id}', '${p.numero}')">
+            ↩️ Restaurar
+          </button>
+        </td>
+      </tr>`
+    }
+    return `
     <tr>
       <td>
         <strong>${p.numero}</strong>
@@ -73,8 +97,11 @@ function renderizarPedidos() {
       <td>
         <button class="btn btn-secondary btn-sm" onclick="editarNota('${p.id}')" title="Ver/editar nota">📝</button>
       </td>
-    </tr>
-  `).join('')
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="eliminarPedido('${p.id}', '${p.numero}')" title="Mover a papelera" style="color:#ef4444">🗑️</button>
+      </td>
+    </tr>`
+  }).join('')
 }
 
 function buscarPedidos(texto) { textoBusqueda = texto; renderizarPedidos() }
@@ -122,9 +149,26 @@ async function guardarNota() {
   await cargarPedidos()
 }
 
+// ── ELIMINAR / RESTAURAR PEDIDO ──
+async function eliminarPedido(id, numero) {
+  if (!confirm(`¿Mover el pedido ${numero} a la papelera?\n\nPodrás restaurarlo desde la papelera si fue un error.`)) return
+
+  const { error } = await db.from('pedidos').update({ estado: 'eliminado' }).eq('id', id)
+  if (error) { alert('Error al eliminar: ' + error.message); return }
+
+  await cargarPedidos()
+}
+
+async function restaurarPedido(id, numero) {
+  const { error } = await db.from('pedidos').update({ estado: 'pendiente' }).eq('id', id)
+  if (error) { alert('Error al restaurar: ' + error.message); return }
+  await cargarPedidos()
+}
+
 // ── EXPORTAR CSV ──
 function exportarCSV() {
-  const lista = filtroActivo === 'todos' ? todosPedidos
+  const lista = filtroActivo === 'todos'
+    ? todosPedidos.filter(p => p.estado !== 'eliminado')
     : todosPedidos.filter(p => p.estado === filtroActivo)
 
   const filas = lista.map(p => [

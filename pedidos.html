@@ -81,6 +81,9 @@
           <button class="filtro-btn" data-estado="listo" onclick="aplicarFiltroPedido('listo')">Listo</button>
           <button class="filtro-btn" data-estado="entregado" onclick="aplicarFiltroPedido('entregado')">Entregado</button>
           <button class="filtro-btn" data-estado="pagado" onclick="aplicarFiltroPedido('pagado')">Pagado</button>
+          <button class="filtro-btn" data-estado="papelera" onclick="aplicarFiltroPedido('papelera')" style="margin-left:8px;color:#6b7280">
+            🗑️ Papelera <span id="stat-papelera-ped" style="background:#e5e7eb;color:#6b7280;border-radius:10px;padding:1px 6px;font-size:11px;margin-left:3px"></span>
+          </button>
         </div>
         <div style="display:flex;gap:8px;margin-left:auto">
           <input type="text" class="search-input" placeholder="Buscar por cliente o N° pedido..."
@@ -98,10 +101,11 @@
             <th>Estado</th>
             <th>Cambiar estado</th>
             <th>Nota</th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody id="tabla-pedidos">
-          <tr><td colspan="7" class="loading">Cargando pedidos...</td></tr>
+          <tr><td colspan="8" class="loading">Cargando pedidos...</td></tr>
         </tbody>
       </table>
     </div>

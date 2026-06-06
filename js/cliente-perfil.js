@@ -88,8 +88,8 @@ function renderTablaCotizaciones(cots) {
     return
   }
   tbody.innerHTML = cots.map(c => {
-    const puedeEditar  = c.estado === 'borrador' || c.estado === 'enviada'
-    const puedeEliminar = c.estado === 'borrador'
+    const puedeEditar  = c.estado === 'borrador' || c.estado === 'enviada' || c.estado === 'aprobada'
+    const puedeEliminar = c.estado === 'borrador' || c.estado === 'aprobada'
     return `
     <tr>
       <td>

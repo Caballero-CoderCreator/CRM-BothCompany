@@ -65,8 +65,8 @@ function renderizarCotizaciones() {
     return
   }
   tbody.innerHTML = lista.map(c => {
-    const puedeEditar   = c.estado === 'borrador' || c.estado === 'enviada'
-    const puedeEliminar = c.estado === 'borrador'
+    const puedeEditar   = c.estado === 'borrador' || c.estado === 'enviada' || c.estado === 'aprobada'
+    const puedeEliminar = c.estado === 'borrador' || c.estado === 'aprobada'
 
     if (esPapelera) {
       return `
@@ -167,7 +167,7 @@ async function cambiarEstado(id, nuevoEstado, estadoActual) {
 
 // ── ELIMINAR BORRADOR ──
 async function eliminarCotizacion(id, numero) {
-  if (!confirm(`¿Eliminar el borrador ${numero}?\n\nEl correlativo no se verá afectado. Esta acción no puede deshacerse.`)) return
+  if (!confirm(`¿Eliminar la cotización ${numero}?\n\nEl correlativo no se verá afectado. Esta acción no puede deshacerse.`)) return
 
   const { error } = await db.from('cotizaciones').update({ estado: 'eliminado' }).eq('id', id)
   if (error) { alert('Error al eliminar: ' + error.message); return }
