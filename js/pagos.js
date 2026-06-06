@@ -12,7 +12,7 @@ async function cargarPagos() {
     { data: pedidos },
     { data: pagos }
   ] = await Promise.all([
-    db.from('pedidos').select('*, clientes(nombre, empresa)').order('created_at', { ascending: false }),
+    db.from('pedidos').select('*, clientes(nombre, empresa)').neq('estado', 'eliminado').order('created_at', { ascending: false }),
     db.from('pagos').select('*')
   ])
 

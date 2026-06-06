@@ -21,3 +21,8 @@ ALTER TABLE cotizaciones DROP CONSTRAINT IF EXISTS cotizaciones_estado_check;
 ALTER TABLE cotizaciones
   ADD CONSTRAINT cotizaciones_estado_check
   CHECK (estado IN ('borrador', 'enviada', 'aprobada', 'rechazada'));
+
+-- Agregar estado 'eliminado' a pedidos para soft delete con papelera
+ALTER TABLE pedidos DROP CONSTRAINT IF EXISTS pedidos_estado_check;
+ALTER TABLE pedidos ADD CONSTRAINT pedidos_estado_check
+  CHECK (estado IN ('pendiente', 'en_produccion', 'listo', 'entregado', 'pagado', 'eliminado'));
