@@ -94,8 +94,8 @@ function renderSeccion(s) {
           </div>
         </div>
         <div class="cat-sec-actions">
-          <button class="btn btn-secondary btn-sm" onclick="abrirModalSeccion('${s.id}')">✏️ Editar sección</button>
-          <button class="btn btn-danger btn-sm" onclick="eliminarSeccion('${s.id}')">🗑️</button>
+          <button class="btn btn-secondary btn-sm" onclick="abrirModalSeccion('${s.id}')">Editar sección</button>
+          <button class="btn btn-danger btn-sm" onclick="eliminarSeccion('${s.id}')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
         </div>
       </div>
 
@@ -128,8 +128,8 @@ function renderProducto(p) {
         ${p.notas ? `<div class="cat-prod-notas">${escHtml(p.notas)}</div>` : ''}
       </div>
       <div class="cat-prod-actions">
-        <button class="btn-prod-edit" onclick="abrirModalProducto('${p.id}')">✏️</button>
-        <button class="btn-prod-del"  onclick="eliminarProducto('${p.id}')">🗑️</button>
+        <button class="btn-prod-edit" onclick="abrirModalProducto('${p.id}')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+        <button class="btn-prod-del"  onclick="eliminarProducto('${p.id}')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
       </div>
     </div>`
 }

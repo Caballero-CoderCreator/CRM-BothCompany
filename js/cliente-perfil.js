@@ -94,14 +94,14 @@ function renderTablaCotizaciones(cots) {
     <tr>
       <td>
         <strong>${c.numero}</strong>
-        ${c.pdf_url ? `<div style="margin-top:3px"><a href="${c.pdf_url}" target="_blank" style="font-size:11px;color:#3b82f6;text-decoration:none;font-weight:500">📄 Ver PDF</a></div>` : ''}
+        ${c.pdf_url ? `<div style="margin-top:3px"><a href="${c.pdf_url}" target="_blank" style="font-size:11px;color:#E6BE73;text-decoration:none;font-weight:600">Ver PDF</a></div>` : ''}
       </td>
       <td style="color:#718096;font-size:13px">${formatFecha(c.created_at)}</td>
       <td>$${Number(c.total).toFixed(2)}</td>
       <td><span class="badge badge-${c.estado}">${ESTADOS_COT[c.estado] || c.estado}</span></td>
       <td style="white-space:nowrap">
-        ${puedeEditar  ? `<button class="btn btn-secondary btn-sm" onclick="abrirModalEditarCot('${c.id}')" style="margin-right:4px">✏️ Editar</button>` : ''}
-        ${puedeEliminar ? `<button class="btn btn-secondary btn-sm" onclick="eliminarCotPerfil('${c.id}','${c.numero}')" style="color:#ef4444">🗑️</button>` : ''}
+        ${puedeEditar  ? `<button class="btn btn-secondary btn-sm" onclick="abrirModalEditarCot('${c.id}')" style="margin-right:4px">Editar</button>` : ''}
+        ${puedeEliminar ? `<button class="btn btn-secondary btn-sm" onclick="eliminarCotPerfil('${c.id}','${c.numero}')" style="color:#ef4444"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>` : ''}
       </td>
     </tr>`
   }).join('')

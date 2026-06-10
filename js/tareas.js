@@ -59,7 +59,7 @@ function renderTabla() {
       <td>
         <strong>${t.titulo}</strong>
         ${t.descripcion ? `<div style="font-size:12px;color:#718096;margin-top:2px">${t.descripcion}</div>` : ''}
-        ${vencida ? `<div style="font-size:11px;color:#dc2626;margin-top:2px">⚠️ Vencida</div>` : ''}
+        ${vencida ? `<div style="font-size:11px;color:#F87171;margin-top:2px;font-weight:600">Vencida</div>` : ''}
       </td>
       <td>${PRIORIDAD_LABEL[t.prioridad] || t.prioridad}</td>
       <td style="white-space:nowrap;font-size:13px;color:${vencida ? '#dc2626' : '#718096'}">${formatFecha(t.vencimiento)}</td>

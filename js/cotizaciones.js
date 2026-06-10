@@ -73,15 +73,15 @@ function renderizarCotizaciones() {
       <tr style="opacity:.8">
         <td>
           <strong>${c.numero}</strong>
-          ${c.pdf_url ? `<div style="margin-top:3px"><a href="${c.pdf_url}" target="_blank" style="font-size:11px;color:#3b82f6;text-decoration:none;font-weight:500">📄 Ver PDF</a></div>` : ''}
+          ${c.pdf_url ? `<div style="margin-top:3px"><a href="${c.pdf_url}" target="_blank" style="font-size:11px;color:#E6BE73;text-decoration:none;font-weight:600">Ver PDF</a></div>` : ''}
         </td>
         <td>${c.clientes?.nombre || '—'}<br><small style="color:#718096">${c.clientes?.empresa || ''}</small></td>
         <td style="white-space:nowrap;color:#718096;font-size:13px">${formatFecha(c.created_at)}</td>
         <td>$${Number(c.total).toFixed(2)}</td>
-        <td><span class="badge" style="background:#f3f4f6;color:#6b7280">Eliminada</span></td>
+        <td><span class="badge" style="background:rgba(255,255,255,.06);color:#87837A">Eliminada</span></td>
         <td colspan="3" style="white-space:nowrap">
           <button class="btn btn-secondary btn-sm" onclick="restaurarCotizacion('${c.id}', '${c.numero}')">
-            ↩️ Restaurar
+            Restaurar
           </button>
         </td>
       </tr>`
@@ -91,7 +91,7 @@ function renderizarCotizaciones() {
     <tr>
       <td>
         <strong>${c.numero}</strong>
-        ${c.pdf_url ? `<div style="margin-top:3px"><a href="${c.pdf_url}" target="_blank" style="font-size:11px;color:#3b82f6;text-decoration:none;font-weight:500">📄 Ver PDF</a></div>` : ''}
+        ${c.pdf_url ? `<div style="margin-top:3px"><a href="${c.pdf_url}" target="_blank" style="font-size:11px;color:#E6BE73;text-decoration:none;font-weight:600">Ver PDF</a></div>` : ''}
         ${c.notas ? `<div style="font-size:11px;color:#9ca3af;margin-top:2px;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.notas}</div>` : ''}
       </td>
       <td>${c.clientes?.nombre || '—'}<br><small style="color:#718096">${c.clientes?.empresa || ''}</small></td>
@@ -109,14 +109,14 @@ function renderizarCotizaciones() {
         }
       </td>
       <td>
-        <button class="btn btn-secondary btn-sm" onclick="editarNota('${c.id}')" title="Ver/editar nota">📝</button>
+        <button class="btn btn-secondary btn-sm" onclick="editarNota('${c.id}')" title="Ver/editar nota"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg></button>
       </td>
       <td style="white-space:nowrap">
         ${puedeEditar
-          ? `<button class="btn btn-secondary btn-sm" onclick="abrirModalEditar('${c.id}')" title="Editar cotización" style="margin-right:4px">✏️ Editar</button>`
+          ? `<button class="btn btn-secondary btn-sm" onclick="abrirModalEditar('${c.id}')" title="Editar cotización" style="margin-right:4px">Editar</button>`
           : ''}
         ${puedeEliminar
-          ? `<button class="btn btn-secondary btn-sm" onclick="eliminarCotizacion('${c.id}', '${c.numero}')" title="Eliminar borrador" style="color:#ef4444">🗑️</button>`
+          ? `<button class="btn btn-secondary btn-sm" onclick="eliminarCotizacion('${c.id}', '${c.numero}')" title="Eliminar borrador" style="color:#ef4444"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`
           : ''}
       </td>
     </tr>`
