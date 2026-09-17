@@ -94,6 +94,7 @@ function renderizarPedidos() {
       </td>
       <td>
         <button class="btn btn-secondary btn-sm" onclick="editarNota('${p.id}')" title="Ver/editar nota">📝</button>
+        <button class="btn btn-secondary btn-sm" onclick="abrirEditarPedido('${p.id}', todosPedidos, cargarPedidos)" title="Editar pedido (estado, total, notas)">✏️</button>
       </td>
       <td>
         <button class="btn btn-secondary btn-sm" onclick="eliminarPedido('${p.id}', '${p.numero}')" title="Mover a papelera" style="color:#ef4444">🗑️</button>

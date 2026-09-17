@@ -108,11 +108,12 @@ function renderTabla() {
           ${saldo > 0 ? '$' + saldo.toFixed(2) : '—'}
         </td>
         <td><span class="badge-pago badge-pago-${estado}">${LABEL_ESTADO[estado]}</span></td>
-        <td>
+        <td style="white-space:nowrap">
           ${estado !== 'pagado'
             ? `<button class="btn btn-primary btn-sm" onclick="abrirModalPago('${ped.id}')">+ Registrar pago</button>`
             : `<span style="font-size:12px;color:#22543d;font-weight:600">✓ Saldado</span>`
           }
+          <button class="btn btn-secondary btn-sm" onclick="abrirEditarPedido('${ped.id}', todosPedidos, cargarPagos)" title="Editar pedido (estado, total, notas o mover a papelera)">✏️</button>
         </td>
       </tr>`
   }).join('')
