@@ -1,6 +1,7 @@
 const COTIZADOR_URL = 'https://cotizador-both-company-production.up.railway.app'
 
 let todasLasCotizaciones = []
+let pedidosPorCotizacion = {}   // cotizacion_id -> [pedidos] (para sincronizar al cambiar estado)
 let filtroActivo = 'todas'
 let textoBusqueda = ''
 let modalNotaId = null
@@ -18,13 +19,15 @@ function formatFecha(iso) {
 }
 
 async function cargarCotizaciones() {
-  const { data, error } = await db
-    .from('cotizaciones')
-    .select('*, clientes(nombre, empresa)')
-    .order('created_at', { ascending: false })
+  const [{ data, error }, { data: peds }] = await Promise.all([
+    db.from('cotizaciones').select('*, clientes(nombre, empresa)').order('created_at', { ascending: false }),
+    db.from('pedidos').select('id, numero, estado, cotizacion_id').not('cotizacion_id', 'is', null)
+  ])
 
   if (error) { console.error(error); return }
   todasLasCotizaciones = data
+  pedidosPorCotizacion = {}
+  for (const p of (peds || [])) (pedidosPorCotizacion[p.cotizacion_id] ||= []).push(p)
   renderizarStats()
   renderizarCotizaciones()
 }
@@ -66,7 +69,8 @@ function renderizarCotizaciones() {
   }
   tbody.innerHTML = lista.map(c => {
     const puedeEditar   = c.estado === 'borrador' || c.estado === 'enviada' || c.estado === 'aprobada'
-    const puedeEliminar = c.estado === 'borrador' || c.estado === 'aprobada'
+    const puedeEliminar = true   // cualquier estado puede ir a la papelera (se puede restaurar)
+    const pedActivo     = pedidoActivoDe(c.id)
 
     if (esPapelera) {
       return `
@@ -99,14 +103,10 @@ function renderizarCotizaciones() {
       <td>$${Number(c.total).toFixed(2)}</td>
       <td><span class="badge badge-${c.estado}">${ETIQUETAS_COT[c.estado] || c.estado}</span></td>
       <td>
-        ${c.estado === 'aprobada' || c.estado === 'rechazada'
-          ? `<span style="font-size:12px;color:#718096;font-style:italic">Estado final</span>`
-          : `<select class="btn btn-secondary btn-sm" onchange="cambiarEstado('${c.id}', this.value, '${c.estado}')">
-              ${ESTADOS_COT.filter(e => e !== 'aprobada' || c.estado !== 'rechazada')
-                .map(e => `<option value="${e}" ${c.estado === e ? 'selected' : ''}>${ETIQUETAS_COT[e]}</option>`)
-                .join('')}
-            </select>`
-        }
+        <select class="btn btn-secondary btn-sm" onchange="cambiarEstado('${c.id}', this.value, '${c.estado}')">
+          ${ESTADOS_COT.map(e => `<option value="${e}" ${c.estado === e ? 'selected' : ''}>${ETIQUETAS_COT[e]}</option>`).join('')}
+        </select>
+        ${pedActivo ? `<div style="font-size:11px;color:#718096;margin-top:3px">Pedido: <a href="/pedidos.html" style="color:#E6BE73;text-decoration:none">${pedActivo.numero}</a></div>` : ''}
       </td>
       <td>
         <button class="btn btn-secondary btn-sm" onclick="editarNota('${c.id}')" title="Ver/editar nota"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg></button>
@@ -116,7 +116,7 @@ function renderizarCotizaciones() {
           ? `<button class="btn btn-secondary btn-sm" onclick="abrirModalEditar('${c.id}')" title="Editar cotización" style="margin-right:4px">Editar</button>`
           : ''}
         ${puedeEliminar
-          ? `<button class="btn btn-secondary btn-sm" onclick="eliminarCotizacion('${c.id}', '${c.numero}')" title="Eliminar borrador" style="color:#ef4444"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`
+          ? `<button class="btn btn-secondary btn-sm" onclick="eliminarCotizacion('${c.id}', '${c.numero}')" title="Mover a la papelera" style="color:#ef4444"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`
           : ''}
       </td>
     </tr>`
@@ -136,38 +136,83 @@ function aplicarFiltro(estado) {
   renderizarCotizaciones()
 }
 
+// Pedido vivo (no eliminado) ligado a una cotización, si existe
+function pedidoActivoDe(cotizacionId) {
+  return (pedidosPorCotizacion[cotizacionId] || []).find(p => p.estado !== 'eliminado') || null
+}
+
+const ETIQUETAS_PED_MIN = {
+  pendiente: 'pendiente', en_produccion: 'en producción', listo: 'listo',
+  entregado: 'entregado', pagado: 'pagado', no_cobrable: 'no se cobra'
+}
+
 async function cambiarEstado(id, nuevoEstado, estadoActual) {
   if (nuevoEstado === estadoActual) return
 
   const cotizacion = todasLasCotizaciones.find(c => c.id === id)
   if (!cotizacion) return
 
+  const pedActivo = pedidoActivoDe(id)
+
+  // Salir de "aprobada" (se aprobó por error): ofrecer anular el pedido que se generó
+  if (estadoActual === 'aprobada' && pedActivo) {
+    const anular = confirm(
+      `Esta cotización tiene el pedido ${pedActivo.numero} (${ETIQUETAS_PED_MIN[pedActivo.estado] || pedActivo.estado}).\n\n` +
+      `¿Mover ese pedido a la papelera también?\n\n` +
+      `Aceptar = sí, anular el pedido.  Cancelar = dejar el pedido como está.`
+    )
+    if (anular) {
+      const { error: errPed } = await db.from('pedidos').update({ estado: 'eliminado' }).eq('id', pedActivo.id)
+      if (errPed) { alert('Error al anular el pedido: ' + errPed.message); return }
+    }
+  }
+
   const { error } = await db.from('cotizaciones').update({ estado: nuevoEstado }).eq('id', id)
-  if (error) { alert('Error al cambiar estado: ' + error.message); return }
+  if (error) { alert('Error al cambiar estado: ' + error.message); await cargarCotizaciones(); return }
 
   if (nuevoEstado === 'aprobada') {
-    const numeroPedido = 'PED-' + cotizacion.numero.replace(/^#/, '')
-    const { error: errPedido } = await db.from('pedidos').insert({
-      cotizacion_id: id,
-      cliente_id: cotizacion.cliente_id,
-      numero: numeroPedido,
-      estado: 'pendiente',
-      total: cotizacion.total,
-      notas: cotizacion.notas || ''
-    })
-    if (errPedido) {
-      console.error('Error creando pedido:', errPedido)
+    if (pedActivo) {
+      // Ya hay un pedido vivo: no duplicar
+      alert(`Cotización aprobada. Ya existía el pedido ${pedActivo.numero}, no se creó otro.`)
     } else {
-      alert(`Cotización aprobada.\nSe creó el pedido ${numeroPedido} automáticamente en la sección Pedidos.`)
+      const enPapelera = (pedidosPorCotizacion[id] || []).find(p => p.estado === 'eliminado')
+      if (enPapelera) {
+        // Se había anulado por error: restaurarlo en lugar de crear uno nuevo
+        const { error: errRest } = await db.from('pedidos').update({ estado: 'pendiente' }).eq('id', enPapelera.id)
+        if (errRest) console.error('Error restaurando pedido:', errRest)
+        else alert(`Cotización aprobada.\nSe restauró el pedido ${enPapelera.numero} desde la papelera.`)
+      } else {
+        const numeroPedido = 'PED-' + cotizacion.numero.replace(/^#/, '')
+        const { error: errPedido } = await db.from('pedidos').insert({
+          cotizacion_id: id,
+          cliente_id: cotizacion.cliente_id,
+          numero: numeroPedido,
+          estado: 'pendiente',
+          total: cotizacion.total,
+          notas: cotizacion.notas || ''
+        })
+        if (errPedido) {
+          console.error('Error creando pedido:', errPedido)
+        } else {
+          alert(`Cotización aprobada.\nSe creó el pedido ${numeroPedido} automáticamente en la sección Pedidos.`)
+        }
+      }
     }
   }
 
   await cargarCotizaciones()
 }
 
-// ── ELIMINAR BORRADOR ──
+// ── MOVER A PAPELERA ──
 async function eliminarCotizacion(id, numero) {
-  if (!confirm(`¿Eliminar la cotización ${numero}?\n\nEl correlativo no se verá afectado. Esta acción no puede deshacerse.`)) return
+  const pedActivo = pedidoActivoDe(id)
+  const extra = pedActivo ? `\n\nTambién se moverá a la papelera su pedido ${pedActivo.numero}.` : ''
+  if (!confirm(`¿Mover la cotización ${numero} a la papelera?${extra}\n\nEl correlativo no se verá afectado y podrás restaurarla desde la papelera.`)) return
+
+  if (pedActivo) {
+    const { error: errPed } = await db.from('pedidos').update({ estado: 'eliminado' }).eq('id', pedActivo.id)
+    if (errPed) { alert('Error al anular el pedido: ' + errPed.message); return }
+  }
 
   const { error } = await db.from('cotizaciones').update({ estado: 'eliminado' }).eq('id', id)
   if (error) { alert('Error al eliminar: ' + error.message); return }

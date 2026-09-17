@@ -343,6 +343,7 @@ tr:hover td { background: rgba(255,255,255,.025); }
 .badge-listo { background: rgba(74,222,128,.14); color: var(--positive); }
 .badge-entregado { background: rgba(196,181,253,.14); color: #C4B5FD; }
 .badge-pagado { background: rgba(125,211,252,.14); color: #7DD3FC; }
+.badge-no_cobrable { background: rgba(255,255,255,.06); color: #A8A29E; text-decoration: line-through; }
 
 /* ── BOTONES ── */
 .btn {

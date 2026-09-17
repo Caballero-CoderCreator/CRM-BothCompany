@@ -79,7 +79,7 @@ function formatFecha(iso) {
 }
 
 const ESTADOS_COT = { borrador: 'Borrador', enviada: 'Enviada', aprobada: 'Aprobada', rechazada: 'Rechazada' }
-const ESTADOS_PED = { pendiente: 'Pendiente', en_produccion: 'En producción', listo: 'Listo', completado: 'Completado', entregado: 'Entregado' }
+const ESTADOS_PED = { pendiente: 'Pendiente', en_produccion: 'En producción', listo: 'Listo', completado: 'Completado', entregado: 'Entregado', pagado: 'Pagado', no_cobrable: 'No se cobra' }
 
 function renderTablaCotizaciones(cots) {
   const tbody = document.getElementById('tabla-cot-perfil')
@@ -89,7 +89,7 @@ function renderTablaCotizaciones(cots) {
   }
   tbody.innerHTML = cots.map(c => {
     const puedeEditar  = c.estado === 'borrador' || c.estado === 'enviada' || c.estado === 'aprobada'
-    const puedeEliminar = c.estado === 'borrador' || c.estado === 'aprobada'
+    const puedeEliminar = true
     return `
     <tr>
       <td>
@@ -201,7 +201,7 @@ async function eliminarArchivo(nombre) {
 
 // ── ELIMINAR BORRADOR (desde perfil) ──
 async function eliminarCotPerfil(id, numero) {
-  if (!confirm(`¿Eliminar el borrador ${numero}?\n\nEl correlativo no se verá afectado.`)) return
+  if (!confirm(`¿Mover ${numero} a la papelera?\n\nEl correlativo no se verá afectado. Si tiene un pedido ligado, anúlalo desde Pedidos.`)) return
   const { error } = await db.from('cotizaciones').update({ estado: 'eliminado' }).eq('id', id)
   if (error) { alert('Error al eliminar: ' + error.message); return }
   cotizacionesPerfil = cotizacionesPerfil.filter(c => c.id !== id)

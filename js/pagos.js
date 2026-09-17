@@ -12,7 +12,7 @@ async function cargarPagos() {
     { data: pedidos },
     { data: pagos }
   ] = await Promise.all([
-    db.from('pedidos').select('*, clientes(nombre, empresa)').neq('estado', 'eliminado').order('created_at', { ascending: false }),
+    db.from('pedidos').select('*, clientes(nombre, empresa)').not('estado', 'in', '("eliminado","no_cobrable")').order('created_at', { ascending: false }),
     db.from('pagos').select('*')
   ])
 
@@ -33,8 +33,8 @@ function pagadoDe(pedidoId) {
 function estadoPago(pedido) {
   const pagado = pagadoDe(pedido.id)
   const total  = Number(pedido.total || 0)
-  if (pagado <= 0)      return 'sin_pagar'
-  if (pagado >= total)  return 'pagado'
+  if (pagado <= 0)             return 'sin_pagar'
+  if (pagado >= total - 0.01)  return 'pagado'   // tolerancia de 1 centavo por redondeos (63.90 vs 63.9015)
   return 'abonado'
 }
 

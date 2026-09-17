@@ -3,10 +3,11 @@ let filtroActivo = 'todos'
 let textoBusqueda = ''
 let modalNotaId = null
 
-const ESTADOS_PED = ['pendiente', 'en_produccion', 'listo', 'entregado', 'pagado']
+const ESTADOS_PED = ['pendiente', 'en_produccion', 'listo', 'entregado', 'pagado', 'no_cobrable']
 const ETIQUETAS_PED = {
   pendiente: 'Pendiente', en_produccion: 'En producción',
-  listo: 'Listo', entregado: 'Entregado', pagado: 'Pagado'
+  listo: 'Listo', entregado: 'Entregado', pagado: 'Pagado',
+  no_cobrable: 'No se cobra'   // caso especial / cortesía / incobrable: sale de cuentas por cobrar
 }
 
 function formatFecha(iso) {
@@ -87,12 +88,9 @@ function renderizarPedidos() {
       <td>$${Number(p.total).toFixed(2)}</td>
       <td><span class="badge badge-${p.estado}">${ETIQUETAS_PED[p.estado] || p.estado}</span></td>
       <td>
-        ${p.estado === 'pagado'
-          ? `<span style="font-size:12px;color:#718096;font-style:italic">Completado</span>`
-          : `<select class="btn btn-secondary btn-sm" onchange="cambiarEstadoPedido('${p.id}', this.value)">
-              ${ESTADOS_PED.map(e => `<option value="${e}" ${p.estado === e ? 'selected' : ''}>${ETIQUETAS_PED[e]}</option>`).join('')}
-            </select>`
-        }
+        <select class="btn btn-secondary btn-sm" onchange="cambiarEstadoPedido('${p.id}', this.value, '${p.estado}')">
+          ${ESTADOS_PED.map(e => `<option value="${e}" ${p.estado === e ? 'selected' : ''}>${ETIQUETAS_PED[e]}</option>`).join('')}
+        </select>
       </td>
       <td>
         <button class="btn btn-secondary btn-sm" onclick="editarNota('${p.id}')" title="Ver/editar nota">📝</button>
@@ -114,9 +112,14 @@ function aplicarFiltroPedido(estado) {
   renderizarPedidos()
 }
 
-async function cambiarEstadoPedido(id, nuevoEstado) {
+async function cambiarEstadoPedido(id, nuevoEstado, estadoActual) {
+  if (nuevoEstado === estadoActual) return
+  if (nuevoEstado === 'no_cobrable' &&
+      !confirm('Marcar como "No se cobra" saca el pedido de cuentas por cobrar y de los ingresos.\n\n¿Confirmar?')) {
+    await cargarPedidos(); return
+  }
   const { error } = await db.from('pedidos').update({ estado: nuevoEstado }).eq('id', id)
-  if (error) { alert('Error al cambiar estado: ' + error.message); return }
+  if (error) { alert('Error al cambiar estado: ' + error.message); await cargarPedidos(); return }
   await cargarPedidos()
 }
 

@@ -224,7 +224,7 @@
       // Top 5 clientes
       const gastosPorCliente = {}
       ;(todosPedidos || []).forEach(p => {
-        if (!p.cliente_id) return
+        if (!p.cliente_id || p.estado === 'eliminado' || p.estado === 'no_cobrable') return
         gastosPorCliente[p.cliente_id] = (gastosPorCliente[p.cliente_id] || 0) + Number(p.total || 0)
       })
       const top5 = Object.entries(gastosPorCliente)

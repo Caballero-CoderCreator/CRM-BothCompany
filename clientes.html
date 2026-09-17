@@ -55,7 +55,8 @@
       <div class="table-toolbar" style="flex-wrap:wrap;gap:10px">
         <input type="text" class="search-input" placeholder="Buscar por nombre, empresa o teléfono..."
           oninput="buscarClientes(this.value)">
-        <button class="btn btn-secondary" onclick="exportarCSV()" title="Exportar a Excel/CSV" style="margin-left:auto">📥 Exportar</button>
+        <button class="btn btn-secondary" onclick="abrirModalDuplicados()" title="Detectar perfiles duplicados (Cosper / COSPER)" style="margin-left:auto">🔀 Duplicados <span id="stat-duplicados" style="background:rgba(230,190,115,.18);color:#E6BE73;border-radius:10px;padding:1px 6px;font-size:11px;margin-left:3px"></span></button>
+        <button class="btn btn-secondary" onclick="exportarCSV()" title="Exportar a Excel/CSV">📥 Exportar</button>
       </div>
       <table>
         <thead>
@@ -114,6 +115,46 @@
         <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
         <button class="btn btn-primary" onclick="guardarCliente()">Guardar</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Fusionar dos perfiles del mismo cliente -->
+  <div class="modal-overlay" id="modal-fusion" onclick="if(event.target===this)cerrarModalFusion()">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Fusionar cliente</span>
+        <button class="btn-close" onclick="cerrarModalFusion()">✕</button>
+      </div>
+      <p style="font-size:13px;color:#A8A29E;margin:0 0 16px">
+        Todo lo del perfil <strong id="fusion-origen-nombre" style="color:#E6BE73"></strong>
+        (cotizaciones, pedidos, pagos, prospectos) pasará al perfil que elijas y el perfil original se borrará.
+        Los datos vacíos del destino (teléfono, email, empresa) se completan con los del origen.
+      </p>
+      <div class="form-group">
+        <label>Conservar el perfil</label>
+        <input type="text" id="fusion-buscar" placeholder="Escribe para filtrar..." oninput="filtrarDestinosFusion(this.value)" style="margin-bottom:8px">
+        <select id="fusion-destino" size="8" style="width:100%"></select>
+      </div>
+      <div id="fusion-resumen" style="font-size:13px;color:#A8A29E;margin-bottom:16px"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-secondary" onclick="cerrarModalFusion()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-fusionar" onclick="confirmarFusion()">Fusionar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detector de duplicados -->
+  <div class="modal-overlay" id="modal-duplicados" onclick="if(event.target===this)cerrarModalDuplicados()">
+    <div class="modal" style="max-width:760px">
+      <div class="modal-header">
+        <span class="modal-title">Posibles duplicados</span>
+        <button class="btn-close" onclick="cerrarModalDuplicados()">✕</button>
+      </div>
+      <p style="font-size:13px;color:#A8A29E;margin:0 0 14px">
+        Perfiles cuyo nombre coincide ignorando mayúsculas, acentos, puntuación y sufijos legales
+        (S.A. de C.V., SA, Ltda.). Elige en cada grupo cuál conservar; los demás se fusionan en él.
+      </p>
+      <div id="lista-duplicados" style="max-height:60vh;overflow:auto"></div>
     </div>
   </div>
     </div>
